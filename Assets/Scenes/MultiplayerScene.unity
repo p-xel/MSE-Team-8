@@ -768,11 +768,11 @@ MonoBehaviour:
   StartMode: 0
   AutoStartAs: 2
   AutoHideGUI: 1
-  AutoClients: 1
+  AutoClients: 2
   ClientStartDelay: 0.1
   ServerPort: 0
   DefaultRoomName: 
-  InitialScenePath: 
+  InitialScenePath: Assets/Scenes/MultiplayerScene.unity
   _currentStage: 0
   AutoConnectVirtualInstances: 1
   VirtualInstanceConnectDelay: 1
