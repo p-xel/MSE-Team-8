@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 563f43b7926f45247bb09b6bdcb26d98
+guid: 5b587a998c6994e4a9a7e724729f140e
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -19,3 +19,10 @@ TrueTypeFontImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267958
+  packageName: Photon Fusion
+  packageVersion: 2.0.12
+  assetPath: Assets/Photon/Fusion/Runtime/RuntimeAssets/Roboto-Regular.ttf
+  uploadId: 888248

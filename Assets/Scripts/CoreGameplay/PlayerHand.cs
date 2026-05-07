@@ -22,8 +22,8 @@ public class PlayerHand : NetworkBehaviour
 
     public override void Spawned()
     {
-        gameManager = FindObjectOfType<GameManager>();
-        gameDeck = FindObjectOfType<GameDeck>();
+        gameManager = FindAnyObjectByType<GameManager>();
+        gameDeck = FindAnyObjectByType<GameDeck>();
         
         if (Object.HasStateAuthority)
         {
@@ -132,7 +132,7 @@ public class PlayerHand : NetworkBehaviour
         {
             if (selectedMyCardIndex != -1)
             {
-                TableHand table = FindObjectOfType<TableHand>();
+                TableHand table = FindAnyObjectByType<TableHand>();
                 if (table != null)
                 {
                     swapCard(table, selectedMyCardIndex, tableIndex, gameManager);

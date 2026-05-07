@@ -1,2 +1,18 @@
 fileFormatVersion: 2
-guid: 478950f664555734da3cdc06239e3c87
+guid: 66a64a17d0b40f34f9224317a5a84bf2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267958
+  packageName: Photon Fusion
+  packageVersion: 2.0.12
+  assetPath: Assets/Photon/Fusion/Editor/NetworkProjectConfigImporter.cs
+  uploadId: 888248

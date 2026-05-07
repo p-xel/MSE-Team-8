@@ -1,2 +1,10 @@
 fileFormatVersion: 2
-guid: 42a71953e72487041aeca5134e7d6d49
+guid: de703c9ba568c804997917200422ce7e
+timeCreated: 1681382704
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267958
+  packageName: Photon Fusion
+  packageVersion: 2.0.12
+  assetPath: Assets/Photon/Fusion/Editor/FusionEditorConfigImporter.cs
+  uploadId: 888248

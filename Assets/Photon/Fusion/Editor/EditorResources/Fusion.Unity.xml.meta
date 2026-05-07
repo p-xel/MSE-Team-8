@@ -1,7 +1,11 @@
 fileFormatVersion: 2
-guid: 8331ee84b5ecaee499931391ac4b8f4f
-TextScriptImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+guid: b199a25aef303094f8d299987c726459
+labels:
+- FusionCodeDoc
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267958
+  packageName: Photon Fusion
+  packageVersion: 2.0.12
+  assetPath: Assets/Photon/Fusion/Editor/EditorResources/Fusion.Unity.xml
+  uploadId: 888248

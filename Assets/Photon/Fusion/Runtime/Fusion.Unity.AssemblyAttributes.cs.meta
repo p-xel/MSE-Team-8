@@ -1,2 +1,18 @@
 fileFormatVersion: 2
-guid: d677a40ffe843a24e844308325e67549
+guid: 87e3886742c1ae04096a83c7188f1d9b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267958
+  packageName: Photon Fusion
+  packageVersion: 2.0.12
+  assetPath: Assets/Photon/Fusion/Runtime/Fusion.Unity.AssemblyAttributes.cs
+  uploadId: 888248

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6f8075aecc0904246bd4de6e1d209f64
+guid: a4ed52b30ac954791b7f3c691f1a348e
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -10,7 +10,8 @@ TrueTypeFontImporter:
   includeFontData: 1
   fontNames:
   - JetBrains Mono
-  fallbackFontReferences: []
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 3c311f7773b444db7b0972edd68fd30a, type: 3}
   customCharacters: 
   fontRenderingMode: 0
   ascentCalculationMode: 1
@@ -19,3 +20,10 @@ TrueTypeFontImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267958
+  packageName: Photon Fusion
+  packageVersion: 2.0.12
+  assetPath: Assets/Photon/Fusion/Runtime/RuntimeAssets/JetBrainsMono-Regular.ttf
+  uploadId: 888248
