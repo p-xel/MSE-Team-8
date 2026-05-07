@@ -97,7 +97,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1261509948005651125}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: -1869825851, guid: 977dbcf975465374990f471e1497f563, type: 3}
+  m_Script: {fileID: -1869825851, guid: 280f7be685ac7b147b5c413fb7cb9c3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fusion.Addons.SimpleKCC.dll::Fusion.Addons.SimpleKCC.SimpleKCC
   _stateAuthorityChangeErrorCorrectionDelta: 0

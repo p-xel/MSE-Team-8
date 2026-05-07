@@ -2,12 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// attaches to a textmeshpro object to display a specific table card
 public class CardDisplayTMPro : MonoBehaviour
 {
     public TableHand tableHand;
     public int cardIndex;
-    
+
     private TextMeshPro textMesh;
     private TextMeshProUGUI textMeshGui;
     private Button button;

@@ -2,21 +2,18 @@ using Fusion;
 using UnityEngine;
 using UnityEngine.UI;
 
-// manages the 3 cards held by a single player
 public class PlayerHand : NetworkBehaviour
 {
-    // networked array of 3 cards for the player
     [Networked, Capacity(3)]
     public NetworkArray<CardData> myCards { get; }
 
-    // ui text elements to display the cards locally
     public Text[] cardTexts = new Text[3];
     public Canvas playerHandCanvas;
 
     private GameManager gameManager;
     private GameDeck gameDeck;
     private bool hasRequestedInitialCards = false;
-    
+
     public static PlayerHand localHand { get; private set; }
     private int selectedMyCardIndex = -1;
 
@@ -24,7 +21,7 @@ public class PlayerHand : NetworkBehaviour
     {
         gameManager = FindAnyObjectByType<GameManager>();
         gameDeck = FindAnyObjectByType<GameDeck>();
-        
+
         if (Object.HasStateAuthority)
         {
             localHand = this;
@@ -35,18 +32,17 @@ public class PlayerHand : NetworkBehaviour
     {
         if (Object == null || !Object.IsValid) return;
 
-        // isolate overlay ui for multi-peer mode
+        // isolate overlay ui to the currently-viewed peer in multi-peer mode
         if (playerHandCanvas != null)
         {
             playerHandCanvas.enabled = Runner.GetVisible();
         }
 
-        // only process keyboard input if this is the player we are currently viewing in multi-peer mode
+        // only the locally-viewed peer reads keyboard input (multi-peer safe)
         if (Object.HasStateAuthority && gameManager != null && Runner.GetVisible())
         {
             if (gameManager.isPlayersTurn(Object.StateAuthority))
             {
-                // skip turn if 's' is pressed
                 if (Input.GetKeyDown(KeyCode.S))
                 {
                     Debug.Log("skipping turn.");
@@ -57,13 +53,11 @@ public class PlayerHand : NetworkBehaviour
         }
     }
 
-    // checks if the hand is empty (first round)
     public bool isHandEmpty()
     {
         return myCards[0].number == 0 && myCards[1].number == 0 && myCards[2].number == 0;
     }
 
-    // player action: draw 3 cards on their first turn
     public void draw3Cards(GameDeck deck, GameManager manager)
     {
         if (Object.HasStateAuthority)
@@ -87,7 +81,6 @@ public class PlayerHand : NetworkBehaviour
         }
     }
 
-    // player action: swap 1 card on subsequent turns
     public void swapCard(TableHand table, int myCardIndex, int tableCardIndex, GameManager manager)
     {
         if (Object.HasStateAuthority)
@@ -112,7 +105,7 @@ public class PlayerHand : NetworkBehaviour
         }
     }
 
-    // called by ui button to select a card in hand
+    // wired to UI Button onClick
     public void selectMyCard(int index)
     {
         if (Object.HasStateAuthority && gameManager != null && gameManager.isPlayersTurn(Object.StateAuthority))
@@ -125,7 +118,7 @@ public class PlayerHand : NetworkBehaviour
         }
     }
 
-    // called by ui button to select a table card and perform swap
+    // wired to UI Button onClick; consumes the previously-selected hand card to swap
     public void selectTableCard(int tableIndex)
     {
         if (Object.HasStateAuthority && gameManager != null && gameManager.isPlayersTurn(Object.StateAuthority))
@@ -136,7 +129,7 @@ public class PlayerHand : NetworkBehaviour
                 if (table != null)
                 {
                     swapCard(table, selectedMyCardIndex, tableIndex, gameManager);
-                    selectedMyCardIndex = -1; // reset after swap
+                    selectedMyCardIndex = -1;
                 }
             }
             else
@@ -146,7 +139,6 @@ public class PlayerHand : NetworkBehaviour
         }
     }
 
-    // called by the master client to give this player 3 cards
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void Rpc_ReceiveInitialHand(CardData c1, CardData c2, CardData c3)
     {
@@ -155,7 +147,6 @@ public class PlayerHand : NetworkBehaviour
         myCards.Set(2, c3);
     }
 
-    // called by the master client to give this player the swapped card
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void Rpc_ReceiveSwappedCard(CardData newCard, int myCardIndex)
     {
@@ -164,7 +155,7 @@ public class PlayerHand : NetworkBehaviour
 
     public override void Render()
     {
-        // auto-draw logic for the first turn
+        // first turn: auto-draw 3 cards then end turn
         if (Object.HasStateAuthority && gameManager != null && gameDeck != null)
         {
             if (gameManager.isPlayersTurn(Object.StateAuthority) && isHandEmpty() && !hasRequestedInitialCards)
@@ -174,8 +165,7 @@ public class PlayerHand : NetworkBehaviour
             }
         }
 
-        // update ui texts to reflect the networked state
-        // we check hasstateauthority so we only update the ui for our local player
+        // only the local player updates their own hand UI
         if (Object.HasStateAuthority)
         {
             for (int i = 0; i < 3; i++)

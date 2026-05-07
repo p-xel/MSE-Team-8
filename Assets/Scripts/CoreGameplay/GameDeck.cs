@@ -2,30 +2,26 @@ using Fusion;
 using UnityEngine;
 using UnityEngine.UI;
 
-// handles the main deck of cards for the game
 public class GameDeck : NetworkBehaviour
 {
-    // the networked list of cards
     [Networked, Capacity(52)]
     public NetworkLinkedList<CardData> deckCards { get; }
 
-    // optional ui text to display remaining cards
     public Text deckText;
 
     public override void Spawned()
     {
-        // only the state authority (master client) initializes the deck
+        // only the state authority owns the deck and seeds it
         if (Object.HasStateAuthority)
         {
             initDeck();
         }
     }
 
-    // populates the deck with a standard 52-card set
     public void initDeck()
     {
         deckCards.Clear();
-        
+
         for (int suit = 0; suit < 4; suit++)
         {
             for (int rank = 1; rank <= 13; rank++)
@@ -33,8 +29,8 @@ public class GameDeck : NetworkBehaviour
                 CardData card = new CardData();
                 card.color = (CardColor)suit;
                 card.number = rank;
-                
-                // assign default game value (e.g., face cards are 10, ace is 11 for game 31)
+
+                // game-31 scoring: A=11, J/Q/K=10, others=face value
                 if (rank == 1) card.gameValue = 11;
                 else if (rank >= 10) card.gameValue = 10;
                 else card.gameValue = rank;
@@ -46,7 +42,7 @@ public class GameDeck : NetworkBehaviour
         shuffleDeck();
     }
 
-    // simple fisher-yates shuffle
+    // Fisher-Yates shuffle
     private void shuffleDeck()
     {
         for (int i = 0; i < deckCards.Count; i++)
@@ -58,7 +54,6 @@ public class GameDeck : NetworkBehaviour
         }
     }
 
-    // attempts to take authority over the deck
     public void requestAuthority()
     {
         if (!Object.HasStateAuthority)
@@ -67,7 +62,7 @@ public class GameDeck : NetworkBehaviour
         }
     }
 
-    // draws a card from the top of the deck. requires state authority.
+    // requires state authority; returns an empty CardData (number==0) if called without it or on an empty deck
     public CardData drawCard()
     {
         if (!Object.HasStateAuthority)
@@ -87,7 +82,7 @@ public class GameDeck : NetworkBehaviour
         return new CardData();
     }
 
-    // called by a player's client to ask the master client (deck owner) for 3 cards
+    // any client can ask, only the deck owner draws and sends back via Rpc_ReceiveInitialHand
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void Rpc_Draw3CardsForPlayer(NetworkBehaviourId playerHandId)
     {
@@ -96,15 +91,13 @@ public class GameDeck : NetworkBehaviour
             CardData c1 = drawCard();
             CardData c2 = drawCard();
             CardData c3 = drawCard();
-            
-            // send the cards back to the player who owns the hand
+
             playerHand.Rpc_ReceiveInitialHand(c1, c2, c3);
         }
     }
 
     public override void Render()
     {
-        // update ui text if assigned
         if (deckText != null)
         {
             deckText.text = $"cards remaining: {deckCards.Count}";

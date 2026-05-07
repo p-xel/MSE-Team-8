@@ -2,7 +2,6 @@ using UnityEngine;
 using TMPro;
 using Fusion;
 
-// attaches to a textmeshpro object on the player prefab to indicate if it is their turn
 public class TurnDisplayTMPro : MonoBehaviour
 {
     private TextMeshPro textMesh;
@@ -33,14 +32,13 @@ public class TurnDisplayTMPro : MonoBehaviour
             {
                 if (gameManager.isPlayersTurn(networkObject.StateAuthority))
                 {
-                    // if this is our local player
+                    // own player → first-person prompt; remote player → spectator prompt
                     if (networkObject.HasStateAuthority)
                     {
                         displayText = "your turn!";
                     }
                     else
                     {
-                        // if looking at another player who is taking their turn
                         displayText = "playing...";
                     }
                 }

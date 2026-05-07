@@ -2,12 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// attaches to a textmeshpro object to display a specific card from the player's hand
 public class PlayerCardDisplayTMPro : MonoBehaviour
 {
     public PlayerHand playerHand;
     public int cardIndex;
-    
+
     private TextMeshPro textMesh;
     private TextMeshProUGUI textMeshGui;
     private Button button;
@@ -26,6 +25,7 @@ public class PlayerCardDisplayTMPro : MonoBehaviour
 
     void onClick()
     {
+        Debug.Log($"clicked card {cardIndex}", this);
         if (PlayerHand.localHand != null)
         {
             PlayerHand.localHand.selectMyCard(cardIndex);
@@ -34,12 +34,11 @@ public class PlayerCardDisplayTMPro : MonoBehaviour
 
     void Update()
     {
-        // wait until playerHand is assigned and valid
         if (playerHand != null && playerHand.Object != null && playerHand.Object.IsValid)
         {
             if (cardIndex >= 0 && cardIndex < playerHand.myCards.Length)
             {
-                // only show the actual card value if this is our local player
+                // local player sees their real cards; remote players' hands stay hidden
                 if (playerHand.Object.HasStateAuthority)
                 {
                     CardData card = playerHand.myCards[cardIndex];
@@ -50,9 +49,8 @@ public class PlayerCardDisplayTMPro : MonoBehaviour
                 }
                 else
                 {
-                    // hide cards that belong to other players
                     string hiddenText = "hidden";
-                    
+
                     if (textMesh != null) textMesh.text = hiddenText;
                     if (textMeshGui != null) textMeshGui.text = hiddenText;
                 }

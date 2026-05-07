@@ -1,7 +1,6 @@
 using Fusion;
 using UnityEngine;
 
-// enum for the 4 suits (colors) of the cards
 public enum CardColor
 {
     Spades,
@@ -10,7 +9,6 @@ public enum CardColor
     Diamonds
 }
 
-// network struct to hold card data across clients
 [System.Serializable]
 public struct CardData : INetworkStruct
 {
@@ -18,7 +16,6 @@ public struct CardData : INetworkStruct
     public int number;
     public int gameValue;
 
-    // helper method to format text for ui display
     public override string ToString()
     {
         string numStr = number.ToString();

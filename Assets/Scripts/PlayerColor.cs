@@ -20,7 +20,7 @@ public class PlayerColor : NetworkBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            // Changing the material color here directly does not work since this code is only executed on the client pressing the button and not on every client.
+            // setting material.color directly would only update on the local client; assigning the [Networked] property replicates and triggers OnChangedRender on every peer
             NetworkedColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1f);
         }
     }
