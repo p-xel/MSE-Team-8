@@ -39,6 +39,9 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Update()
     {
+        // in multi-peer mode, only collect local input if this peer is currently being viewed
+        if (!Runner.GetVisible()) return;
+
         if (Input.GetButtonDown("Jump"))
         {
             _jumpPressed = true;
@@ -47,6 +50,9 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        // in multi-peer mode, only process local input if this peer is currently being viewed
+        if (!Runner.GetVisible()) return;
+
         // in simple scenarios (especially Shared Mode), restrict this to the local authority
         if (HasStateAuthority == false && HasInputAuthority == false) return;
 
@@ -75,8 +81,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public void LateUpdate()
     {
-        // only input authority needs to update camera.
-        if (Object == null || Object.HasInputAuthority == false)
+        // in multi-peer mode, only update the camera if this is the player we are currently viewing
+        if (Object == null || !Object.HasInputAuthority || !Runner.GetVisible())
             return;
 
         // update camera pivot and transfer properties from camera handle to Main Camera.
