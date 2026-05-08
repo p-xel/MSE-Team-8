@@ -2,7 +2,6 @@
     "name": "Fusion.Unity.Editor",
     "rootNamespace": "Fusion",
     "references": [
-        "Fusion.Unity",
         "GUID:142cc54f3f73e4dabac1c30b19afb51d",
         "GUID:19e39f4cea842594788e0c7be4c044c8",
         "GUID:1baf1ffff1031e948b3b228ab3453251",

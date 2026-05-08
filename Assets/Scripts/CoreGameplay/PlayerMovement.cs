@@ -1,12 +1,13 @@
 using Fusion;
-using Fusion.Addons.SimpleKCC;
 using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour
 {
     private bool _jumpPressed;
-
-    private SimpleKCC _simpleKCC;
+    private CharacterController _controller;
+    private float _verticalVelocity;
+    private float _pitch;
+    private float _yaw;
 
     public float playerSpeed = 5f;
     public float jumpForce = 10f;
@@ -19,7 +20,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Awake()
     {
-        _simpleKCC = GetComponent<SimpleKCC>();
+        _controller = GetComponent<CharacterController>();
 
         if (Camera == null) Camera = Camera.main;
 
@@ -31,14 +32,11 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void Spawned()
     {
-        // SimpleKCC.SetGravity takes a Y-axis value, not a Vector3
-        _simpleKCC.SetGravity(Physics.gravity.y * 4.0f);
+        _yaw = transform.eulerAngles.y;
     }
-
 
     private void Update()
     {
-        // multi-peer: only the visible peer reads input
         if (!Runner.GetVisible()) return;
 
         if (Input.GetButtonDown("Jump"))
@@ -51,37 +49,39 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (!Runner.GetVisible()) return;
 
-        // Shared Mode: only the owning client drives its character
         if (HasStateAuthority == false && HasInputAuthority == false) return;
 
-        float lookX = Input.GetAxisRaw("Mouse Y") * lookSensitivity * -1f; // pitch
-        float lookY = Input.GetAxisRaw("Mouse X") * lookSensitivity;       // yaw
-        _simpleKCC.AddLookRotation(new Vector2(lookX, lookY));
+        float dt = Runner.DeltaTime;
 
-        Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, Input.GetAxisRaw("Vertical"));
-        Vector3 moveVelocity = _simpleKCC.TransformRotation * inputDirection.normalized * playerSpeed;
+        _pitch = Mathf.Clamp(_pitch + Input.GetAxisRaw("Mouse Y") * lookSensitivity * -1f, -89f, 89f);
+        _yaw += Input.GetAxisRaw("Mouse X") * lookSensitivity;
+        transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
 
-        float jumpImpulse = 0f;
-        if (_jumpPressed && _simpleKCC.IsGrounded)
+        Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+        Vector3 moveVelocity = transform.rotation * inputDirection.normalized * playerSpeed;
+
+        if (_controller.isGrounded)
         {
-            jumpImpulse = jumpForce;
+            // small negative holds the controller against the ground each tick
+            _verticalVelocity = _jumpPressed ? jumpForce : -2f;
+        }
+        else
+        {
+            _verticalVelocity += Physics.gravity.y * 4f * dt;
         }
 
-        _simpleKCC.Move(moveVelocity, jumpImpulse);
+        moveVelocity.y = _verticalVelocity;
+        _controller.Move(moveVelocity * dt);
 
         _jumpPressed = false;
     }
-
 
     public void LateUpdate()
     {
         if (Object == null || !Object.HasInputAuthority || !Runner.GetVisible())
             return;
 
-        // LateUpdate runs after Render() interpolation, so the KCC pose is already final
-        Vector2 pitchRotation = _simpleKCC.GetLookRotation(true, false);
-        cameraPivot.localRotation = Quaternion.Euler(pitchRotation);
-
+        cameraPivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
         Camera.main.transform.SetPositionAndRotation(cameraHandle.position, cameraHandle.rotation);
     }
 }
