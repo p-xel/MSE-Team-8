@@ -2,22 +2,22 @@ using Fusion;
 using UnityEngine;
 using System.Collections.Generic;
 
-public class GameManager : NetworkBehaviour
-{
-    [Networked] public bool isGameStarted { get; set; }
+public enum GamePhase { Lobby, Playing, GameOver }
 
-    // randomized turn order, populated in startGame()
+public class GameManager : NetworkBehaviour, IPlayerLeft
+{
+    [Networked] public GamePhase phase { get; set; }
+
     [Networked, Capacity(8)]
     public NetworkArray<PlayerRef> turnOrder { get; }
 
     [Networked] public int playerCount { get; set; }
-
-    // index into turnOrder of the active player
     [Networked] public int currentTurnIndex { get; set; }
 
-    // assigned in inspector, or auto-resolved if on the same GameObject
     public GameDeck gameDeck;
     public TableHand tableHand;
+
+    public bool isGameStarted => phase == GamePhase.Playing;
 
     public override void Spawned()
     {
@@ -28,28 +28,19 @@ public class GameManager : NetworkBehaviour
     void Update()
     {
         if (Object == null || !Object.IsValid) return;
-
-        // only the state authority (host) can start the game; P is the host hotkey
-        if (Object.HasStateAuthority && !isGameStarted && Input.GetKeyDown(KeyCode.P))
-        {
+        if (Object.HasStateAuthority && phase == GamePhase.Lobby && Input.GetKeyDown(KeyCode.P))
             startGame();
-        }
     }
 
     private void startGame()
     {
-        isGameStarted = true;
-
-        if (gameDeck != null) gameDeck.initDeck();
-        if (tableHand != null && gameDeck != null) tableHand.initialize(gameDeck);
+        gameDeck.initDeck();
+        tableHand.initialize(gameDeck);
 
         List<PlayerRef> activePlayers = new List<PlayerRef>();
         foreach (PlayerRef player in Runner.ActivePlayers)
-        {
             activePlayers.Add(player);
-        }
 
-        // shuffle of turn order
         for (int i = 0; i < activePlayers.Count; i++)
         {
             PlayerRef temp = activePlayers[i];
@@ -60,28 +51,76 @@ public class GameManager : NetworkBehaviour
 
         playerCount = activePlayers.Count;
         for (int i = 0; i < playerCount; i++)
-        {
             turnOrder.Set(i, activePlayers[i]);
+
+        PlayerHand[] allHands = FindObjectsByType<PlayerHand>();
+        foreach (PlayerHand hand in allHands)
+        {
+            if (hand.Object == null || !hand.Object.IsValid) continue;
+            for (int i = 0; i < playerCount; i++)
+            {
+                if (turnOrder[i] != hand.Object.StateAuthority) continue;
+                CardData c1 = gameDeck.drawCard();
+                CardData c2 = gameDeck.drawCard();
+                CardData c3 = gameDeck.drawCard();
+                if (hand.Object.HasStateAuthority)
+                {
+                    hand.myCards.Set(0, c1);
+                    hand.myCards.Set(1, c2);
+                    hand.myCards.Set(2, c3);
+                }
+                else
+                {
+                    hand.Rpc_ReceiveInitialHand(c1, c2, c3);
+                }
+                break;
+            }
         }
 
         currentTurnIndex = 0;
-        Debug.Log($"game started with {playerCount} players!");
+        phase = GamePhase.Playing;
     }
 
-    // called by any client when their turn action completes
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void Rpc_EndTurn()
+    void IPlayerLeft.PlayerLeft(PlayerRef player)
+    {
+        if (!Object.HasStateAuthority || phase != GamePhase.Playing) return;
+
+        int leavingIndex = -1;
+        for (int i = 0; i < playerCount; i++)
+        {
+            if (turnOrder[i] == player) { leavingIndex = i; break; }
+        }
+
+        if (leavingIndex == -1) return;
+
+        for (int i = leavingIndex; i < playerCount - 1; i++)
+            turnOrder.Set(i, turnOrder[i + 1]);
+        turnOrder.Set(playerCount - 1, default);
+        playerCount--;
+
+        if (playerCount == 0) { phase = GamePhase.GameOver; return; }
+
+        if (leavingIndex < currentTurnIndex)
+            currentTurnIndex--;
+        else if (leavingIndex == currentTurnIndex)
+            currentTurnIndex = currentTurnIndex % playerCount;
+    }
+
+    public void endTurn()
     {
         if (playerCount > 0)
-        {
             currentTurnIndex = (currentTurnIndex + 1) % playerCount;
-            Debug.Log($"turn ended. next turn is for player at index: {currentTurnIndex}");
-        }
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
+    public void Rpc_EndTurn()
+    {
+        endTurn();
     }
 
     public bool isPlayersTurn(PlayerRef player)
     {
-        if (!isGameStarted || playerCount == 0) return false;
+        if (phase != GamePhase.Playing || playerCount == 0) return false;
         return turnOrder[currentTurnIndex] == player;
     }
 }

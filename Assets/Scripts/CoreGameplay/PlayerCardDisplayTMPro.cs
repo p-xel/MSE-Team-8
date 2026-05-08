@@ -17,44 +17,35 @@ public class PlayerCardDisplayTMPro : MonoBehaviour
         textMeshGui = GetComponent<TextMeshProUGUI>();
         button = GetComponent<Button>();
 
+        if (playerHand == null)
+            playerHand = GetComponentInParent<PlayerHand>();
+
         if (button != null)
-        {
             button.onClick.AddListener(onClick);
-        }
     }
 
     void onClick()
     {
-        Debug.Log($"clicked card {cardIndex}", this);
         if (PlayerHand.localHand != null)
-        {
             PlayerHand.localHand.selectMyCard(cardIndex);
-        }
     }
 
     void Update()
     {
-        if (playerHand != null && playerHand.Object != null && playerHand.Object.IsValid)
+        if (playerHand == null || playerHand.Object == null || !playerHand.Object.IsValid) return;
+        if (cardIndex < 0 || cardIndex >= playerHand.myCards.Length) return;
+
+        if (playerHand.Object.HasStateAuthority)
         {
-            if (cardIndex >= 0 && cardIndex < playerHand.myCards.Length)
-            {
-                // local player sees their real cards; remote players' hands stay hidden
-                if (playerHand.Object.HasStateAuthority)
-                {
-                    CardData card = playerHand.myCards[cardIndex];
-                    string displayText = card.number > 0 ? card.ToString() : "empty";
-
-                    if (textMesh != null) textMesh.text = displayText;
-                    if (textMeshGui != null) textMeshGui.text = displayText;
-                }
-                else
-                {
-                    string hiddenText = "hidden";
-
-                    if (textMesh != null) textMesh.text = hiddenText;
-                    if (textMeshGui != null) textMeshGui.text = hiddenText;
-                }
-            }
+            CardData card = playerHand.myCards[cardIndex];
+            string displayText = card.number > 0 ? card.ToString() : "empty";
+            if (textMesh != null) textMesh.text = displayText;
+            if (textMeshGui != null) textMeshGui.text = displayText;
+        }
+        else
+        {
+            if (textMesh != null) textMesh.text = "hidden";
+            if (textMeshGui != null) textMeshGui.text = "hidden";
         }
     }
 }

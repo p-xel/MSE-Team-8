@@ -12,7 +12,7 @@ public class PlayerHand : NetworkBehaviour
 
     private GameManager gameManager;
     private GameDeck gameDeck;
-    private bool hasRequestedInitialCards = false;
+    private TurnDisplayTMPro turnDisplay;
 
     public static PlayerHand localHand { get; private set; }
     private int selectedMyCardIndex = -1;
@@ -21,35 +21,29 @@ public class PlayerHand : NetworkBehaviour
     {
         gameManager = FindAnyObjectByType<GameManager>();
         gameDeck = FindAnyObjectByType<GameDeck>();
+        turnDisplay = transform.root.GetComponentInChildren<TurnDisplayTMPro>();
 
         if (Object.HasStateAuthority)
         {
             localHand = this;
+            if (playerHandCanvas != null) playerHandCanvas.enabled = true;
+        }
+        else
+        {
+            if (playerHandCanvas != null) playerHandCanvas.enabled = false;
         }
     }
 
     void Update()
     {
-        if (Object == null || !Object.IsValid) return;
+        if (Object == null || !Object.IsValid || !Object.HasStateAuthority) return;
+        if (gameManager == null) return;
 
-        // isolate overlay ui to the currently-viewed peer in multi-peer mode
-        if (playerHandCanvas != null)
+        if (gameManager.isPlayersTurn(Object.StateAuthority) && Input.GetKeyDown(KeyCode.S))
         {
-            playerHandCanvas.enabled = Runner.GetVisible();
-        }
-
-        // only the locally-viewed peer reads keyboard input (multi-peer safe)
-        if (Object.HasStateAuthority && gameManager != null && Runner.GetVisible())
-        {
-            if (gameManager.isPlayersTurn(Object.StateAuthority))
-            {
-                if (Input.GetKeyDown(KeyCode.S))
-                {
-                    Debug.Log("skipping turn.");
-                    selectedMyCardIndex = -1;
-                    gameManager.Rpc_EndTurn();
-                }
-            }
+            selectedMyCardIndex = -1;
+            if (gameManager.Object.HasStateAuthority) gameManager.endTurn();
+            else gameManager.Rpc_EndTurn();
         }
     }
 
@@ -60,86 +54,48 @@ public class PlayerHand : NetworkBehaviour
 
     public void draw3Cards(GameDeck deck, GameManager manager)
     {
-        if (Object.HasStateAuthority)
-        {
-            if (manager.isPlayersTurn(Object.StateAuthority))
-            {
-                if (isHandEmpty())
-                {
-                    deck.Rpc_Draw3CardsForPlayer(Id);
-                    manager.Rpc_EndTurn();
-                }
-                else
-                {
-                    Debug.LogWarning("cannot draw 3 cards. hand is not empty.");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("it is not your turn!");
-            }
-        }
+        if (!Object.HasStateAuthority) return;
+        if (!manager.isPlayersTurn(Object.StateAuthority)) return;
+        if (!isHandEmpty()) return;
+        deck.Rpc_Draw3CardsForPlayer(Id);
+        if (manager.Object.HasStateAuthority) manager.endTurn();
+        else manager.Rpc_EndTurn();
     }
 
     public void swapCard(TableHand table, int myCardIndex, int tableCardIndex, GameManager manager)
     {
-        if (Object.HasStateAuthority)
-        {
-            if (manager.isPlayersTurn(Object.StateAuthority))
-            {
-                if (!isHandEmpty())
-                {
-                    CardData cardToSwap = myCards[myCardIndex];
-                    table.Rpc_SwapCard(tableCardIndex, cardToSwap, Id, myCardIndex);
-                    manager.Rpc_EndTurn();
-                }
-                else
-                {
-                    Debug.LogWarning("cannot swap cards. hand is empty. you must draw first.");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("it is not your turn!");
-            }
-        }
+        if (!Object.HasStateAuthority) return;
+        if (!manager.isPlayersTurn(Object.StateAuthority)) return;
+        if (isHandEmpty()) return;
+
+        CardData cardToSwap = myCards[myCardIndex];
+        if (table.Object.HasStateAuthority) table.performSwap(tableCardIndex, cardToSwap, Id, myCardIndex);
+        else table.Rpc_SwapCard(tableCardIndex, cardToSwap, Id, myCardIndex);
+        if (manager.Object.HasStateAuthority) manager.endTurn();
+        else manager.Rpc_EndTurn();
     }
 
-    // wired to UI Button onClick
     public void selectMyCard(int index)
     {
-        if (Object.HasStateAuthority && gameManager != null && gameManager.isPlayersTurn(Object.StateAuthority))
-        {
-            if (!isHandEmpty())
-            {
-                selectedMyCardIndex = index;
-                Debug.Log($"selected hand card {index}");
-            }
-        }
+        if (!Object.HasStateAuthority || gameManager == null) return;
+        if (!gameManager.isPlayersTurn(Object.StateAuthority) || isHandEmpty()) return;
+        selectedMyCardIndex = index;
     }
 
-    // wired to UI Button onClick; consumes the previously-selected hand card to swap
     public void selectTableCard(int tableIndex)
     {
-        if (Object.HasStateAuthority && gameManager != null && gameManager.isPlayersTurn(Object.StateAuthority))
-        {
-            if (selectedMyCardIndex != -1)
-            {
-                TableHand table = FindAnyObjectByType<TableHand>();
-                if (table != null)
-                {
-                    swapCard(table, selectedMyCardIndex, tableIndex, gameManager);
-                    selectedMyCardIndex = -1;
-                }
-            }
-            else
-            {
-                Debug.LogWarning("select a card from your hand first!");
-            }
-        }
+        if (!Object.HasStateAuthority || gameManager == null) return;
+        if (!gameManager.isPlayersTurn(Object.StateAuthority)) return;
+        if (selectedMyCardIndex == -1) return;
+
+        TableHand table = FindAnyObjectByType<TableHand>();
+        if (table == null) return;
+
+        swapCard(table, selectedMyCardIndex, tableIndex, gameManager);
+        selectedMyCardIndex = -1;
     }
 
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
     public void Rpc_ReceiveInitialHand(CardData c1, CardData c2, CardData c3)
     {
         myCards.Set(0, c1);
@@ -147,7 +103,7 @@ public class PlayerHand : NetworkBehaviour
         myCards.Set(2, c3);
     }
 
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
     public void Rpc_ReceiveSwappedCard(CardData newCard, int myCardIndex)
     {
         myCards.Set(myCardIndex, newCard);
@@ -155,33 +111,22 @@ public class PlayerHand : NetworkBehaviour
 
     public override void Render()
     {
-        // first turn: auto-draw 3 cards then end turn
-        if (Object.HasStateAuthority && gameManager != null && gameDeck != null)
-        {
-            if (gameManager.isPlayersTurn(Object.StateAuthority) && isHandEmpty() && !hasRequestedInitialCards)
-            {
-                hasRequestedInitialCards = true;
-                draw3Cards(gameDeck, gameManager);
-            }
-        }
-
-        // only the local player updates their own hand UI
         if (Object.HasStateAuthority)
         {
             for (int i = 0; i < 3; i++)
             {
-                if (cardTexts != null && i < cardTexts.Length && cardTexts[i] != null)
-                {
-                    if (myCards[i].number > 0)
-                    {
-                        cardTexts[i].text = myCards[i].ToString();
-                    }
-                    else
-                    {
-                        cardTexts[i].text = "empty";
-                    }
-                }
+                if (cardTexts == null || i >= cardTexts.Length || cardTexts[i] == null) continue;
+                cardTexts[i].text = myCards[i].number > 0 ? myCards[i].ToString() : "empty";
             }
         }
+
+        if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
+        if (turnDisplay == null || gameManager == null) return;
+        if (!Object.HasStateAuthority) return;
+
+        string text = "";
+        if (gameManager.phase == GamePhase.Playing)
+            text = gameManager.isPlayersTurn(Object.StateAuthority) ? "your turn!" : "waiting...";
+        turnDisplay.setText(text);
     }
 }

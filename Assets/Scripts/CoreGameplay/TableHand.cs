@@ -9,43 +9,31 @@ public class TableHand : NetworkBehaviour
 
     public Text[] cardTexts = new Text[3];
 
-    public void requestAuthority()
-    {
-        if (!Object.HasStateAuthority)
-        {
-            Object.RequestStateAuthority();
-        }
-    }
-
-    // caller needs state authority over both this table AND the deck
     public void initialize(GameDeck deck)
     {
-        if (!Object.HasStateAuthority)
-        {
-            Debug.LogWarning("cannot initialize table without state authority!");
-            return;
-        }
-
+        if (!Object.HasStateAuthority) return;
         for (int i = 0; i < 3; i++)
-        {
             tableCards.Set(i, deck.drawCard());
-        }
     }
 
-    // any client requests the swap; the table owner performs it and returns the displaced card
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void performSwap(int tableIndex, CardData playerCard, NetworkBehaviourId playerHandId, int handIndex)
+    {
+        if (tableIndex < 0 || tableIndex >= 3) return;
+        if (!Runner.TryFindBehaviour(playerHandId, out PlayerHand playerHand)) return;
+
+        CardData oldTableCard = tableCards[tableIndex];
+        tableCards.Set(tableIndex, playerCard);
+
+        if (playerHand.Object.HasStateAuthority)
+            playerHand.myCards.Set(handIndex, oldTableCard);
+        else
+            playerHand.Rpc_ReceiveSwappedCard(oldTableCard, handIndex);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
     public void Rpc_SwapCard(int tableIndex, CardData playerCard, NetworkBehaviourId playerHandId, int handIndex)
     {
-        if (Runner.TryFindBehaviour(playerHandId, out PlayerHand playerHand))
-        {
-            if (tableIndex >= 0 && tableIndex < 3)
-            {
-                CardData oldTableCard = tableCards[tableIndex];
-                tableCards.Set(tableIndex, playerCard);
-
-                playerHand.Rpc_ReceiveSwappedCard(oldTableCard, handIndex);
-            }
-        }
+        performSwap(tableIndex, playerCard, playerHandId, handIndex);
     }
 
     public override void Render()
