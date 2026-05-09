@@ -2,7 +2,7 @@ using Fusion;
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum GamePhase { Lobby, Playing, GameOver }
+public enum GamePhase { Lobby, Playing, LastRound, GameOver }
 
 public class GameManager : NetworkBehaviour, IPlayerLeft
 {
@@ -13,6 +13,9 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
 
     [Networked] public int playerCount { get; set; }
     [Networked] public int currentTurnIndex { get; set; }
+    [Networked] public int lastRoundTurnsLeft { get; set; }
+    [Networked] public int turnCount { get; set; }
+    [Networked] public PlayerRef winner { get; set; }
 
     public GameDeck gameDeck;
     public TableHand tableHand;
@@ -78,6 +81,7 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
         }
 
         currentTurnIndex = 0;
+        turnCount = 1;
         phase = GamePhase.Playing;
     }
 
@@ -108,8 +112,16 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
 
     public void endTurn()
     {
+        if (phase == GamePhase.LastRound)
+        {
+            lastRoundTurnsLeft--;
+            if (lastRoundTurnsLeft <= 0) { setWinner(); phase = GamePhase.GameOver; return; }
+        }
         if (playerCount > 0)
+        {
             currentTurnIndex = (currentTurnIndex + 1) % playerCount;
+            if (currentTurnIndex == 0) turnCount++;
+        }
     }
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
@@ -118,9 +130,55 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
         endTurn();
     }
 
+    public void knock()
+    {
+        lastRoundTurnsLeft = playerCount - 1;
+        if (lastRoundTurnsLeft <= 0) { setWinner(); phase = GamePhase.GameOver; return; }
+        phase = GamePhase.LastRound;
+        if (playerCount > 0)
+            currentTurnIndex = (currentTurnIndex + 1) % playerCount;
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
+    public void Rpc_Knock()
+    {
+        knock();
+    }
+
+    private void setWinner()
+    {
+        PlayerHand[] allHands = FindObjectsByType<PlayerHand>();
+        PlayerRef bestPlayer = PlayerRef.None;
+        float best = -1f;
+        bool tied = false;
+
+        foreach (PlayerHand hand in allHands)
+        {
+            if (hand.Object == null || !hand.Object.IsValid) continue;
+            float v = computeHandValue(hand.myCards);
+            if (v > best) { best = v; bestPlayer = hand.Object.StateAuthority; tied = false; }
+            else if (v == best) tied = true;
+        }
+        winner = tied ? PlayerRef.None : bestPlayer; // nobody wins if there's a tie (for now)
+    }
+
+    private float computeHandValue(NetworkArray<CardData> cards)
+    {
+        CardData c0 = cards[0], c1 = cards[1], c2 = cards[2];
+        if (c0.number > 0 && c0.number == c1.number && c1.number == c2.number)
+            return 30.5f;
+        int[] totals = new int[4];
+        for (int i = 0; i < 3; i++)
+            if (cards[i].number > 0) totals[(int)cards[i].color] += cards[i].gameValue;
+        float best = 0;
+        for (int i = 0; i < 4; i++) if (totals[i] > best) best = totals[i];
+        return best;
+    }
+
     public bool isPlayersTurn(PlayerRef player)
     {
-        if (phase != GamePhase.Playing || playerCount == 0) return false;
+        if (phase != GamePhase.Playing && phase != GamePhase.LastRound) return false;
+        if (playerCount == 0) return false;
         return turnOrder[currentTurnIndex] == player;
     }
 }

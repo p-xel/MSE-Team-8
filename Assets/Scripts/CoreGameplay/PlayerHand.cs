@@ -39,12 +39,6 @@ public class PlayerHand : NetworkBehaviour
         if (Object == null || !Object.IsValid || !Object.HasStateAuthority) return;
         if (gameManager == null) return;
 
-        if (gameManager.isPlayersTurn(Object.StateAuthority) && Input.GetKeyDown(KeyCode.S))
-        {
-            selectedMyCardIndex = -1;
-            if (gameManager.Object.HasStateAuthority) gameManager.endTurn();
-            else gameManager.Rpc_EndTurn();
-        }
     }
 
     public bool isHandEmpty()
@@ -73,6 +67,24 @@ public class PlayerHand : NetworkBehaviour
         else table.Rpc_SwapCard(tableCardIndex, cardToSwap, Id, myCardIndex);
         if (manager.Object.HasStateAuthority) manager.endTurn();
         else manager.Rpc_EndTurn();
+    }
+
+    public void skipTurn()
+    {
+        if (!Object.HasStateAuthority || gameManager == null) return;
+        if (!gameManager.isPlayersTurn(Object.StateAuthority)) return;
+        selectedMyCardIndex = -1;
+        if (gameManager.Object.HasStateAuthority) gameManager.endTurn();
+        else gameManager.Rpc_EndTurn();
+    }
+
+    // knock = call end of round
+    public void knockTurn()
+    {
+        if (!Object.HasStateAuthority || gameManager == null) return;
+        if (!gameManager.isPlayersTurn(Object.StateAuthority)) return;
+        if (gameManager.Object.HasStateAuthority) gameManager.knock();
+        else gameManager.Rpc_Knock();
     }
 
     public void selectMyCard(int index)
@@ -123,10 +135,21 @@ public class PlayerHand : NetworkBehaviour
         if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
         if (turnDisplay == null || gameManager == null) return;
         if (!Object.HasStateAuthority) return;
-
+    
         string text = "";
-        if (gameManager.phase == GamePhase.Playing)
-            text = gameManager.isPlayersTurn(Object.StateAuthority) ? "your turn!" : "waiting...";
+        if (gameManager.phase == GamePhase.Playing || gameManager.phase == GamePhase.LastRound)
+        {
+            string header = gameManager.phase == GamePhase.LastRound
+                ? "last round!"
+                : $"turn {gameManager.turnCount}";
+            string status = gameManager.isPlayersTurn(Object.StateAuthority) ? "your turn!" : "waiting...";
+            text = $"{header}\n{status}";
+        }
+        else if (gameManager.phase == GamePhase.GameOver)
+        {
+            if (gameManager.winner == PlayerRef.None) text = "draw!";
+            else text = gameManager.winner == Object.StateAuthority ? "you win!" : "you lose!";
+        }
         turnDisplay.setText(text);
     }
 }
