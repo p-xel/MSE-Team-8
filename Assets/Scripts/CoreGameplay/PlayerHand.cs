@@ -140,12 +140,12 @@ public class PlayerHand : NetworkBehaviour
         if (gameManager.phase == GamePhase.Playing || gameManager.phase == GamePhase.LastRound)
         {
             string header = gameManager.phase == GamePhase.LastRound
-                ? "last round!"
-                : $"turn {gameManager.turnCount}";
+                ? $"deal {gameManager.dealCount} | last round!"
+                : $"deal {gameManager.dealCount} | round {gameManager.roundCount}";
             string status = gameManager.isPlayersTurn(Object.StateAuthority) ? "your turn!" : "waiting...";
             text = $"{header}\n{status}";
         }
-        else if (gameManager.phase == GamePhase.GameOver)
+        else if (gameManager.phase == GamePhase.DealOver)
         {
             if (gameManager.winner == PlayerRef.None) text = "draw!";
             else text = gameManager.winner == Object.StateAuthority ? "you win!" : "you lose!";

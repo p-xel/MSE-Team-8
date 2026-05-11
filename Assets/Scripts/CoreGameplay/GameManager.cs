@@ -2,7 +2,7 @@ using Fusion;
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum GamePhase { Lobby, Playing, LastRound, GameOver }
+public enum GamePhase { Lobby, Playing, LastRound, DealOver }
 
 public class GameManager : NetworkBehaviour, IPlayerLeft
 {
@@ -13,14 +13,15 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
 
     [Networked] public int playerCount { get; set; }
     [Networked] public int currentTurnIndex { get; set; }
-    [Networked] public int lastRoundTurnsLeft { get; set; }
-    [Networked] public int turnCount { get; set; }
+    [Networked] public int turnsLeftOnLastRound { get; set; }
+    [Networked] public int dealCount { get; set; }
+    [Networked] public int roundCount { get; set; }
     [Networked] public PlayerRef winner { get; set; }
 
     public GameDeck gameDeck;
     public TableHand tableHand;
 
-    public bool isGameStarted => phase == GamePhase.Playing;
+    public bool isDealActive => phase == GamePhase.Playing || phase == GamePhase.LastRound;
 
     public override void Spawned()
     {
@@ -31,11 +32,11 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
     void Update()
     {
         if (Object == null || !Object.IsValid) return;
-        if (Object.HasStateAuthority && phase == GamePhase.Lobby && Input.GetKeyDown(KeyCode.P))
-            startGame();
+        if (Object.HasStateAuthority && Input.GetKeyDown(KeyCode.P) && (phase == GamePhase.Lobby || phase == GamePhase.DealOver))
+            startDeal();
     }
 
-    private void startGame()
+    private void startDeal()
     {
         gameDeck.initDeck();
         tableHand.initialize(gameDeck);
@@ -80,8 +81,11 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
             }
         }
 
+        dealCount++;
         currentTurnIndex = 0;
-        turnCount = 1;
+        roundCount = 1;
+        turnsLeftOnLastRound = 0;
+        winner = default;
         phase = GamePhase.Playing;
     }
 
@@ -102,7 +106,7 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
         turnOrder.Set(playerCount - 1, default);
         playerCount--;
 
-        if (playerCount == 0) { phase = GamePhase.GameOver; return; }
+        if (playerCount == 0) { phase = GamePhase.DealOver; return; }
 
         if (leavingIndex < currentTurnIndex)
             currentTurnIndex--;
@@ -114,13 +118,13 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
     {
         if (phase == GamePhase.LastRound)
         {
-            lastRoundTurnsLeft--;
-            if (lastRoundTurnsLeft <= 0) { setWinner(); phase = GamePhase.GameOver; return; }
+            turnsLeftOnLastRound--;
+            if (turnsLeftOnLastRound <= 0) { setWinner(); phase = GamePhase.DealOver; return; }
         }
         if (playerCount > 0)
         {
             currentTurnIndex = (currentTurnIndex + 1) % playerCount;
-            if (currentTurnIndex == 0) turnCount++;
+            if (currentTurnIndex == 0) roundCount++;
         }
     }
 
@@ -132,8 +136,8 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
 
     public void knock()
     {
-        lastRoundTurnsLeft = playerCount - 1;
-        if (lastRoundTurnsLeft <= 0) { setWinner(); phase = GamePhase.GameOver; return; }
+        turnsLeftOnLastRound = playerCount - 1;
+        if (turnsLeftOnLastRound <= 0) { setWinner(); phase = GamePhase.DealOver; return; }
         phase = GamePhase.LastRound;
         if (playerCount > 0)
             currentTurnIndex = (currentTurnIndex + 1) % playerCount;
@@ -159,7 +163,7 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
             if (v > best) { best = v; bestPlayer = hand.Object.StateAuthority; tied = false; }
             else if (v == best) tied = true;
         }
-        winner = tied ? PlayerRef.None : bestPlayer; // nobody wins if there's a tie (for now)
+        winner = tied ? PlayerRef.None : bestPlayer;
     }
 
     private float computeHandValue(NetworkArray<CardData> cards)
