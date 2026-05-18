@@ -1,0 +1,77 @@
+.card {
+    width: 130px;
+    height: 190px;
+    background-color: rgb(22, 22, 26);
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: rgb(55, 55, 65);
+    flex-direction: column;
+    padding: 8px;
+    transition-property: border-color, border-width, translate;
+    transition-duration: 0.05s, 0.05s, 0.06s;
+}
+
+.card:hover {
+    border-color: rgb(255, 140, 0);
+}
+
+.card--selected {
+    border-color: rgb(255, 255, 255);
+    border-width: 3px;
+    translate: 0 -15%;
+}
+
+.card--empty {
+    background-color: rgb(15, 15, 18);
+    border-color: rgb(35, 35, 42);
+}
+
+.card_corner {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.card_corner--bottom {
+    align-items: flex-end;
+    rotate: 180deg;
+}
+
+.card_rank {
+    color: rgb(220, 220, 228);
+    font-size: 20px;
+    -unity-font-style: bold;
+    margin: 0;
+    padding: 0;
+}
+
+.card_suit-small {
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
+    margin-top: -2px;
+}
+
+.card_suit-center {
+    flex-grow: 1;
+    font-size: 62px;
+    -unity-text-align: middle-center;
+    align-self: stretch;
+    margin: 0;
+    padding: 0;
+}
+
+.hearts {
+    color: rgb(210, 45, 45);
+}
+
+.diamonds {
+    color: rgb(210, 45, 45);
+}
+
+.spades {
+    color: rgb(220, 220, 228);
+}
+
+.clubs {
+    color: rgb(220, 220, 228);
+}

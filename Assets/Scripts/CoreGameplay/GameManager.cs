@@ -21,6 +21,9 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
     public GameDeck gameDeck;
     public TableHand tableHand;
 
+    private PlayerRef _cardOverride = PlayerRef.None;
+    private CardData _co0, _co1, _co2;
+
     public bool isDealActive => phase == GamePhase.Playing || phase == GamePhase.LastRound;
 
     public override void Spawned()
@@ -114,8 +117,10 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
             currentTurnIndex = currentTurnIndex % playerCount;
     }
 
-    public void endTurn()
+    public void endTurn(PlayerRef actingPlayer, CardData c0, CardData c1, CardData c2)
     {
+        _cardOverride = actingPlayer;
+        _co0 = c0; _co1 = c1; _co2 = c2;
         if (phase == GamePhase.LastRound)
         {
             turnsLeftOnLastRound--;
@@ -129,9 +134,9 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
     }
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
-    public void Rpc_EndTurn()
+    public void Rpc_EndTurn(PlayerRef actingPlayer, CardData c0, CardData c1, CardData c2)
     {
-        endTurn();
+        endTurn(actingPlayer, c0, c1, c2);
     }
 
     public void knock()
@@ -159,21 +164,23 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
         foreach (PlayerHand hand in allHands)
         {
             if (hand.Object == null || !hand.Object.IsValid) continue;
-            float v = computeHandValue(hand.myCards);
+            float v = hand.Object.StateAuthority == _cardOverride
+                ? computeHandValue(_co0, _co1, _co2)
+                : computeHandValue(hand.myCards[0], hand.myCards[1], hand.myCards[2]);
             if (v > best) { best = v; bestPlayer = hand.Object.StateAuthority; tied = false; }
             else if (v == best) tied = true;
         }
+        _cardOverride = PlayerRef.None;
         winner = tied ? PlayerRef.None : bestPlayer;
     }
 
-    private float computeHandValue(NetworkArray<CardData> cards)
+    private float computeHandValue(CardData c0, CardData c1, CardData c2)
     {
-        CardData c0 = cards[0], c1 = cards[1], c2 = cards[2];
         if (c0.number > 0 && c0.number == c1.number && c1.number == c2.number)
             return 30.5f;
         int[] totals = new int[4];
-        for (int i = 0; i < 3; i++)
-            if (cards[i].number > 0) totals[(int)cards[i].color] += cards[i].gameValue;
+        foreach (CardData c in new[] { c0, c1, c2 })
+            if (c.number > 0) totals[(int)c.color] += c.gameValue;
         float best = 0;
         for (int i = 0; i < 4; i++) if (totals[i] > best) best = totals[i];
         return best;

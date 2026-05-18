@@ -1,13 +1,10 @@
 using Fusion;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TableHand : NetworkBehaviour
 {
     [Networked, Capacity(3)]
     public NetworkArray<CardData> tableCards { get; }
-
-    public Text[] cardTexts = new Text[3];
 
     public void initialize(GameDeck deck)
     {
@@ -36,21 +33,28 @@ public class TableHand : NetworkBehaviour
         performSwap(tableIndex, playerCard, playerHandId, handIndex);
     }
 
-    public override void Render()
+    public void stealAll(NetworkBehaviourId playerHandId)
     {
-        for (int i = 0; i < 3; i++)
+        if (!Runner.TryFindBehaviour(playerHandId, out PlayerHand playerHand)) return;
+
+        CardData t0 = tableCards[0], t1 = tableCards[1], t2 = tableCards[2];
+        tableCards.Set(0, playerHand.myCards[0]);
+        tableCards.Set(1, playerHand.myCards[1]);
+        tableCards.Set(2, playerHand.myCards[2]);
+
+        if (playerHand.Object.HasStateAuthority)
         {
-            if (cardTexts != null && i < cardTexts.Length && cardTexts[i] != null)
-            {
-                if (tableCards[i].number > 0)
-                {
-                    cardTexts[i].text = tableCards[i].ToString();
-                }
-                else
-                {
-                    cardTexts[i].text = "empty";
-                }
-            }
+            playerHand.myCards.Set(0, t0);
+            playerHand.myCards.Set(1, t1);
+            playerHand.myCards.Set(2, t2);
         }
+        else
+            playerHand.Rpc_ReceiveNewHand(t0, t1, t2);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
+    public void Rpc_StealAll(NetworkBehaviourId playerHandId)
+    {
+        stealAll(playerHandId);
     }
 }

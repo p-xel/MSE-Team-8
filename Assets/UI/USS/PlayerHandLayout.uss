@@ -1,0 +1,84 @@
+.ph-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ph-top {
+    flex-direction: column;
+    padding: 18px 22px;
+}
+
+.ph-deal-label {
+    color: rgb(220, 220, 228);
+    font-size: 28px;
+    -unity-font-style: bold;
+    margin-top: 6px;
+    white-space: normal;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+
+.ph-hand-value-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.ph-hand-value-icon {
+    font-size: 42px;
+    -unity-font-style: bold;
+}
+
+.ph-hand-value-label {
+    font-size: 42px;
+    -unity-font-style: bold;
+    margin-left: 6px;
+}
+
+.ph-bottom {
+    flex-direction: row;
+    align-items: flex-end;
+    padding: 20px 22px;
+    padding-bottom: 68px;
+    overflow: visible;
+}
+
+.ph-cards-row {
+    flex-direction: row;
+    overflow: visible;
+}
+
+.ph-cards-row > .card {
+    margin-right: 12px;
+}
+
+.ph-actions {
+    flex-direction: column;
+    margin-left: 24px;
+    justify-content: flex-end;
+}
+
+.ph-actions > .game-button {
+    margin-bottom: 10px;
+}
+
+.ph-life-bars {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    padding: 12px 22px;
+    height: 46px;
+}
+
+.ph-life-bars > .life-bar {
+    margin-right: 8px;
+}
