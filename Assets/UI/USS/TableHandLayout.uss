@@ -1,0 +1,27 @@
+.th-root {
+    position: absolute;
+    top: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 16px 20px;
+    overflow: visible;
+}
+
+.th-cards-row {
+    flex-direction: row;
+    overflow: visible;
+}
+
+.th-cards-row > .card {
+    margin-right: 12px;
+}
+
+.th-steal-btn {
+    margin-top: 10px;
+    align-self: stretch;
+}
+
+.card--available:hover {
+    border-color: rgb(58, 185, 80);
+}

@@ -1,44 +1,30 @@
 using Fusion;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerHand : NetworkBehaviour
 {
     [Networked, Capacity(3)]
     public NetworkArray<CardData> myCards { get; }
 
-    public Text[] cardTexts = new Text[3];
-    public Canvas playerHandCanvas;
+    public PlayerHandUI playerHandUI;
 
     private GameManager gameManager;
     private GameDeck gameDeck;
-    private TurnDisplayTMPro turnDisplay;
 
     public static PlayerHand localHand { get; private set; }
     private int selectedMyCardIndex = -1;
+
+    public int selectedCardIndex => selectedMyCardIndex;
 
     public override void Spawned()
     {
         gameManager = FindAnyObjectByType<GameManager>();
         gameDeck = FindAnyObjectByType<GameDeck>();
-        turnDisplay = transform.root.GetComponentInChildren<TurnDisplayTMPro>();
 
         if (Object.HasStateAuthority)
-        {
             localHand = this;
-            if (playerHandCanvas != null) playerHandCanvas.enabled = true;
-        }
-        else
-        {
-            if (playerHandCanvas != null) playerHandCanvas.enabled = false;
-        }
-    }
 
-    void Update()
-    {
-        if (Object == null || !Object.IsValid || !Object.HasStateAuthority) return;
-        if (gameManager == null) return;
-
+        playerHandUI?.SetVisible(Object.HasStateAuthority);
     }
 
     public bool isHandEmpty()
@@ -52,8 +38,8 @@ public class PlayerHand : NetworkBehaviour
         if (!manager.isPlayersTurn(Object.StateAuthority)) return;
         if (!isHandEmpty()) return;
         deck.Rpc_Draw3CardsForPlayer(Id);
-        if (manager.Object.HasStateAuthority) manager.endTurn();
-        else manager.Rpc_EndTurn();
+        if (manager.Object.HasStateAuthority) manager.endTurn(Object.StateAuthority, myCards[0], myCards[1], myCards[2]);
+        else manager.Rpc_EndTurn(Object.StateAuthority, myCards[0], myCards[1], myCards[2]);
     }
 
     public void swapCard(TableHand table, int myCardIndex, int tableCardIndex, GameManager manager)
@@ -63,10 +49,15 @@ public class PlayerHand : NetworkBehaviour
         if (isHandEmpty()) return;
 
         CardData cardToSwap = myCards[myCardIndex];
+        CardData incoming = table.tableCards[tableCardIndex];
+        CardData c0 = myCardIndex == 0 ? incoming : myCards[0];
+        CardData c1 = myCardIndex == 1 ? incoming : myCards[1];
+        CardData c2 = myCardIndex == 2 ? incoming : myCards[2];
+
         if (table.Object.HasStateAuthority) table.performSwap(tableCardIndex, cardToSwap, Id, myCardIndex);
         else table.Rpc_SwapCard(tableCardIndex, cardToSwap, Id, myCardIndex);
-        if (manager.Object.HasStateAuthority) manager.endTurn();
-        else manager.Rpc_EndTurn();
+        if (manager.Object.HasStateAuthority) manager.endTurn(Object.StateAuthority, c0, c1, c2);
+        else manager.Rpc_EndTurn(Object.StateAuthority, c0, c1, c2);
     }
 
     public void skipTurn()
@@ -74,11 +65,10 @@ public class PlayerHand : NetworkBehaviour
         if (!Object.HasStateAuthority || gameManager == null) return;
         if (!gameManager.isPlayersTurn(Object.StateAuthority)) return;
         selectedMyCardIndex = -1;
-        if (gameManager.Object.HasStateAuthority) gameManager.endTurn();
-        else gameManager.Rpc_EndTurn();
+        if (gameManager.Object.HasStateAuthority) gameManager.endTurn(Object.StateAuthority, myCards[0], myCards[1], myCards[2]);
+        else gameManager.Rpc_EndTurn(Object.StateAuthority, myCards[0], myCards[1], myCards[2]);
     }
 
-    // knock = call end of round
     public void knockTurn()
     {
         if (!Object.HasStateAuthority || gameManager == null) return;
@@ -121,35 +111,34 @@ public class PlayerHand : NetworkBehaviour
         myCards.Set(myCardIndex, newCard);
     }
 
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority, InvokeLocal = false)]
+    public void Rpc_ReceiveNewHand(CardData c0, CardData c1, CardData c2)
+    {
+        myCards.Set(0, c0);
+        myCards.Set(1, c1);
+        myCards.Set(2, c2);
+    }
+
+    public void stealTable()
+    {
+        if (!Object.HasStateAuthority || gameManager == null) return;
+        if (!gameManager.isPlayersTurn(Object.StateAuthority) || isHandEmpty()) return;
+
+        TableHand table = FindAnyObjectByType<TableHand>();
+        if (table == null) return;
+
+        CardData c0 = table.tableCards[0], c1 = table.tableCards[1], c2 = table.tableCards[2];
+
+        if (table.Object.HasStateAuthority) table.stealAll(Id);
+        else table.Rpc_StealAll(Id);
+
+        selectedMyCardIndex = -1;
+        if (gameManager.Object.HasStateAuthority) gameManager.endTurn(Object.StateAuthority, c0, c1, c2);
+        else gameManager.Rpc_EndTurn(Object.StateAuthority, c0, c1, c2);
+    }
+
     public override void Render()
     {
-        if (Object.HasStateAuthority)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                if (cardTexts == null || i >= cardTexts.Length || cardTexts[i] == null) continue;
-                cardTexts[i].text = myCards[i].number > 0 ? myCards[i].ToString() : "empty";
-            }
-        }
-
         if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
-        if (turnDisplay == null || gameManager == null) return;
-        if (!Object.HasStateAuthority) return;
-    
-        string text = "";
-        if (gameManager.phase == GamePhase.Playing || gameManager.phase == GamePhase.LastRound)
-        {
-            string header = gameManager.phase == GamePhase.LastRound
-                ? $"deal {gameManager.dealCount} | last round!"
-                : $"deal {gameManager.dealCount} | round {gameManager.roundCount}";
-            string status = gameManager.isPlayersTurn(Object.StateAuthority) ? "your turn!" : "waiting...";
-            text = $"{header}\n{status}";
-        }
-        else if (gameManager.phase == GamePhase.DealOver)
-        {
-            if (gameManager.winner == PlayerRef.None) text = "draw!";
-            else text = gameManager.winner == Object.StateAuthority ? "you win!" : "you lose!";
-        }
-        turnDisplay.setText(text);
     }
 }

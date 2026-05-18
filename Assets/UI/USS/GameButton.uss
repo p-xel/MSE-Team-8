@@ -1,0 +1,57 @@
+.game-button {
+    min-width: 180px;
+    height: 44px;
+    border-radius: 4px;
+    border-width: 0;
+    justify-content: center;
+    align-items: center;
+    padding: 0 16px;
+    cursor: link;
+    transition-property: background-color, scale;
+    transition-duration: 0.08s, 0.08s;
+}
+
+.game-button:hover {
+    scale: 1.03 1.03;
+}
+
+.game-button:active {
+    scale: 0.97 0.97;
+}
+
+.game-button--primary {
+    background-color: rgb(58, 170, 75);
+}
+
+.game-button--primary:hover {
+    background-color: rgb(72, 190, 90);
+}
+
+.game-button--danger {
+    background-color: rgb(195, 55, 55);
+}
+
+.game-button--danger:hover {
+    background-color: rgb(215, 70, 70);
+}
+
+.game-button--special {
+    background-color: rgb(58, 82, 185);
+}
+
+.game-button--special:hover {
+    background-color: rgb(72, 98, 210);
+}
+
+.game-button--disabled {
+    opacity: 0.4;
+    cursor: arrow;
+}
+
+.game-button_label {
+    color: rgb(240, 240, 240);
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 1px;
+}

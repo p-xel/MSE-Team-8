@@ -1,0 +1,29 @@
+.notification {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    align-items: center;
+    padding-top: 20px;
+    transition-property: opacity;
+    transition-duration: 0.2s;
+}
+
+.notification--visible {
+    opacity: 1;
+}
+
+.notification--hidden {
+    opacity: 0;
+}
+
+.notification_label {
+    color: rgb(255, 140, 0);
+    font-size: 36px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 3px;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
