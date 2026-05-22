@@ -20,7 +20,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Awake()
     {
-        _controller = GetComponent<CharacterController>();
+        _controller = GetComUpload to Agentponent<CharacterController>();
 
         if (Camera == null) Camera = Camera.main;
 
