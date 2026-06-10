@@ -1,0 +1,80 @@
+.menu-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    cursor: link;
+}
+
+.menu-item--disabled {
+    opacity: 0.35;
+    cursor: arrow;
+}
+
+.menu-item_text-wrap {
+    position: relative;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-item_text {
+    color: rgb(245, 245, 245);
+    font-size: 54px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 4px;
+    margin: 0;
+    padding: 0 18px;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.menu-item_text--glitch {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+}
+
+.menu-item_text--cyan {
+    color: rgb(20, 225, 235);
+}
+
+.menu-item_text--magenta {
+    color: rgb(235, 25, 205);
+}
+
+.menu-item:hover .menu-item_text--cyan {
+    opacity: 0.9;
+    translate: -4px 3px;
+}
+
+.menu-item:hover .menu-item_text--magenta {
+    opacity: 0.9;
+    translate: 4px -3px;
+}
+
+.menu-item_chevron {
+    color: rgb(245, 245, 245);
+    font-size: 46px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.menu-item:hover .menu-item_chevron {
+    opacity: 1;
+}
+
+.menu-item--account .menu-item_text {
+    font-size: 30px;
+    letter-spacing: 2px;
+}
+
+.menu-item--account .menu-item_chevron {
+    font-size: 24px;
+}
