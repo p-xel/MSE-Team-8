@@ -2,6 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=unity,windows,macos,linux,rider,visualstudiocode,visualstudio,intellij
 
 */ExternalAssets/*
+*/HotReload*
+.idea/
 
 ### Intellij ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
@@ -715,3 +717,7 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/unity,windows,macos,linux,rider,visualstudiocode,visualstudio,intellij
+
+# Unity auto-recovery backups
+Assets/_Recovery/
+Assets/_Recovery.meta
