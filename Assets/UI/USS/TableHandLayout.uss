@@ -1,9 +1,10 @@
 .th-root {
     position: absolute;
     top: 0;
+    left: 0;
     right: 0;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     padding: 16px 20px;
     overflow: visible;
 }

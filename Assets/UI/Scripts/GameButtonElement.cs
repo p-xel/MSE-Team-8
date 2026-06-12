@@ -16,7 +16,10 @@ public partial class GameButtonElement : VisualElement
         label.AddToClassList("game-button_label");
         Add(label);
 
-        RegisterCallback<ClickEvent>(_ => clickAction?.Invoke());
+        RegisterCallback<ClickEvent>(_ => {
+            AudioManager.PlayButtonClick();
+            clickAction?.Invoke();
+        });
     }
 
     public void Setup(string text, GameButtonStyle style, Action onClick)

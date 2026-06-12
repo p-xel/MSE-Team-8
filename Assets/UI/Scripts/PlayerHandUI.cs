@@ -1,6 +1,7 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.UIElements;
+using CoreGameplay;
 
 public class PlayerHandUI : MonoBehaviour
 {
@@ -9,15 +10,23 @@ public class PlayerHandUI : MonoBehaviour
     private UIDocument doc;
     private PlayerHand playerHand;
     private GameManager gameManager;
+    private GameManager roundManager;
+    private PlayerStatus playerStatus;
 
     private readonly CardElement[] handCards = new CardElement[3];
     private GameButtonElement skipButton;
     private GameButtonElement knockButton;
+    private GameButtonElement stealButton;
     private NotificationElement notification;
     private Label dealRoundLabel;
     private Label suitIconLabel;
     private Label handValueLabel;
     private readonly LifeBarElement[] lifeBars = new LifeBarElement[3];
+    private VisualElement bottomContainer;
+    private VisualElement handValueRow;
+
+    private RoundPhase lastPhase = RoundPhase.Inactive;
+    private NetworkBehaviourId lastShotTargetId = default;
 
     void Awake()
     {
@@ -35,6 +44,9 @@ public class PlayerHandUI : MonoBehaviour
     void Start()
     {
         gameManager = FindAnyObjectByType<GameManager>();
+        roundManager = gameManager;
+        if (playerHand != null)
+            playerStatus = playerHand.GetComponent<PlayerStatus>();
     }
 
     void BuildUI()
@@ -61,8 +73,7 @@ public class PlayerHandUI : MonoBehaviour
         dealRoundLabel.pickingMode = PickingMode.Ignore;
         top.Add(dealRoundLabel);
 
-
-        var handValueRow = new VisualElement();
+        handValueRow = new VisualElement();
         handValueRow.AddToClassList("ph-hand-value-row");
         handValueRow.pickingMode = PickingMode.Ignore;
         suitIconLabel = new Label("♠");
@@ -77,37 +88,45 @@ public class PlayerHandUI : MonoBehaviour
 
         phRoot.Add(top);
 
-        var bottom = new VisualElement();
-        bottom.AddToClassList("ph-bottom");
-        bottom.pickingMode = PickingMode.Ignore;
+        bottomContainer = new VisualElement();
+        bottomContainer.AddToClassList("ph-bottom");
+        bottomContainer.pickingMode = PickingMode.Ignore;
 
         var cardsRow = new VisualElement();
         cardsRow.AddToClassList("ph-cards-row");
         cardsRow.pickingMode = PickingMode.Ignore;
+        cardsRow.style.display = DisplayStyle.None;
         for (int i = 0; i < 3; i++)
         {
             handCards[i] = new CardElement();
             handCards[i].SetEmpty();
             int idx = i;
-            handCards[i].RegisterCallback<ClickEvent>(_ => playerHand?.selectMyCard(idx));
+            handCards[i].RegisterCallback<ClickEvent>(_ => {
+                AudioManager.PlayButtonClick();
+                playerHand?.selectMyCard(idx);
+            });
             cardsRow.Add(handCards[i]);
         }
-        bottom.Add(cardsRow);
+        bottomContainer.Add(cardsRow);
 
         var actions = new VisualElement();
         actions.AddToClassList("ph-actions");
         actions.pickingMode = PickingMode.Ignore;
 
-        skipButton = new GameButtonElement();
-        skipButton.Setup("SKIP >>>", GameButtonStyle.Primary, () => playerHand?.skipTurn());
-        actions.Add(skipButton);
+        stealButton = new GameButtonElement();
+        stealButton.Setup(">> STEAL THE TABLE <<", GameButtonStyle.Special, () => playerHand?.stealTable());
+        actions.Add(stealButton);
 
         knockButton = new GameButtonElement();
         knockButton.Setup(">> KNOCK <<", GameButtonStyle.Danger, () => playerHand?.knockTurn());
         actions.Add(knockButton);
 
-        bottom.Add(actions);
-        phRoot.Add(bottom);
+        skipButton = new GameButtonElement();
+        skipButton.Setup("SKIP >>>", GameButtonStyle.Primary, () => playerHand?.skipTurn());
+        actions.Add(skipButton);
+
+        bottomContainer.Add(actions);
+        phRoot.Add(bottomContainer);
 
         var lifeBarsRow = new VisualElement();
         lifeBarsRow.AddToClassList("ph-life-bars");
@@ -120,12 +139,15 @@ public class PlayerHandUI : MonoBehaviour
         }
         phRoot.Add(lifeBarsRow);
 
+
+
         root.Add(phRoot);
 
         root.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Ignore);
         foreach (var c in handCards) c.pickingMode = PickingMode.Position;
-        skipButton.pickingMode = PickingMode.Position;
+        stealButton.pickingMode = PickingMode.Position;
         knockButton.pickingMode = PickingMode.Position;
+        skipButton.pickingMode = PickingMode.Position;
     }
 
     void Update()
@@ -133,6 +155,41 @@ public class PlayerHandUI : MonoBehaviour
         if (playerHand == null || playerHand.Object == null || !playerHand.Object.IsValid) return;
 
         if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
+        if (roundManager == null) roundManager = gameManager;
+
+        if (roundManager != null && roundManager.Object != null && roundManager.Object.IsValid)
+        {
+            RoundPhase currentPhase = roundManager.phase;
+            if (currentPhase != lastPhase)
+            {
+                if (currentPhase == RoundPhase.LastRound)
+                {
+                    AudioManager.PlayKnock();
+                }
+                lastPhase = currentPhase;
+            }
+
+            NetworkBehaviourId currentShotTarget = roundManager.shotTargetHandId;
+            if (currentShotTarget != lastShotTargetId)
+            {
+                if (currentShotTarget != default)
+                {
+                    AudioManager.PlayShoot();
+                }
+                lastShotTargetId = currentShotTarget;
+            }
+        }
+
+        bool isShootingOrCooldown = roundManager != null && 
+                                    roundManager.Object != null && 
+                                    roundManager.Object.IsValid && 
+                                    (roundManager.phase == RoundPhase.Shooting || 
+                                     roundManager.phase == RoundPhase.Cooldown);
+
+        if (bottomContainer != null)
+            bottomContainer.style.display = isShootingOrCooldown ? DisplayStyle.None : DisplayStyle.Flex;
+        if (handValueRow != null)
+            handValueRow.style.display = isShootingOrCooldown ? DisplayStyle.None : DisplayStyle.Flex;
 
         RefreshCards();
         RefreshLabels();
@@ -151,18 +208,17 @@ public class PlayerHandUI : MonoBehaviour
             else handCards[i].SetEmpty();
             handCards[i].SetSelected(i == selected);
         }
-
     }
 
     void RefreshLabels()
     {
-        if (gameManager == null) return;
+        if (roundManager == null || roundManager.Object == null || !roundManager.Object.IsValid) return;
 
-        GamePhase phase = gameManager.phase;
-        if (phase == GamePhase.Playing || phase == GamePhase.LastRound)
+        RoundPhase phase = roundManager.phase;
+        if (phase == RoundPhase.Playing || phase == RoundPhase.LastRound)
         {
-            string roundStr = phase == GamePhase.LastRound ? "LAST ROUND" : $"TURN {gameManager.roundCount}";
-            dealRoundLabel.text = $"DEAL {gameManager.dealCount}\n{roundStr}";
+            string roundStr = phase == RoundPhase.LastRound ? "LAST ROUND" : $"TURN {roundManager.turnCycleCount}";
+            dealRoundLabel.text = $"ROUND {roundManager.roundCount}\n{roundStr}";
         }
         else
         {
@@ -180,42 +236,99 @@ public class PlayerHandUI : MonoBehaviour
         suitIconLabel.AddToClassList(suitClass);
         handValueLabel.AddToClassList(suitClass);
 
-        bool isMyTurn = gameManager.isPlayersTurn(playerHand.Object.StateAuthority);
-        if (phase == GamePhase.DealOver)
+        if (gameManager == null)
+            gameManager = FindAnyObjectByType<GameManager>();
+
+        bool isMyTurn = roundManager.isPlayersTurn(playerHand.Id);
+        bool isGameManagerValid = gameManager != null && gameManager.Object != null && gameManager.Object.IsValid;
+
+        if (isGameManagerValid && gameManager.currentState == GameState.GameOver)
         {
-            PlayerRef me = playerHand.Object.StateAuthority;
-            if (gameManager.winner == PlayerRef.None) notification.Show("TIE");
-            else if (gameManager.winner == me) notification.Show("YOU WIN");
-            else notification.Show("YOU LOSE");
+            if (gameManager.matchWinnerHandId == playerHand.Id)
+            {
+                notification.Show("MATCH WINNER! YOU WIN!");
+            }
+            else
+            {
+                PlayerHand winnerHandObj = null;
+                playerHand.Runner.TryFindBehaviour(gameManager.matchWinnerHandId, out winnerHandObj);
+                string winnerName = winnerHandObj != null ? winnerHandObj.GetComponent<PlayerStatus>()?.playerName.Value : "";
+                if (string.IsNullOrEmpty(winnerName)) winnerName = "WINNER";
+                notification.Show($"GAME OVER - {winnerName.ToUpper()} WINS!");
+            }
         }
-        else if (isMyTurn) notification.Show("YOUR TURN");
-        else notification.Hide();
+        else if (phase == RoundPhase.Shooting)
+        {
+            if (roundManager.currentWinnerHandId == playerHand.Id)
+            {
+                PlayerHand target = roundManager.GetLookTarget(playerHand);
+                if (target != null)
+                {
+                    string targetName = target.GetComponent<PlayerStatus>()?.playerName.Value;
+                    if (string.IsNullOrEmpty(targetName)) targetName = "PLAYER";
+                    notification.Show($"PRESS SPACE TO SHOOT {targetName.ToUpper()}!");
+                }
+                else
+                {
+                    notification.Show("LOOK AT A PLAYER TO TARGET THEM!");
+                }
+            }
+            else
+            {
+                PlayerHand winnerHandObj = null;
+                playerHand.Runner.TryFindBehaviour(roundManager.currentWinnerHandId, out winnerHandObj);
+                string winnerName = winnerHandObj != null ? winnerHandObj.GetComponent<PlayerStatus>()?.playerName.Value : "";
+                if (string.IsNullOrEmpty(winnerName)) winnerName = "WINNER";
+                notification.Show($"{winnerName.ToUpper()} IS SHOOTING...");
+            }
+        }
+        else if (phase == RoundPhase.Cooldown)
+        {
+            if (roundManager.shotTargetHandId == default)
+            {
+                notification.Show("TIE - NO ONE WAS SHOT");
+            }
+            else
+            {
+                PlayerHand target = null;
+                playerHand.Runner.TryFindBehaviour(roundManager.shotTargetHandId, out target);
+                string targetName = target != null ? target.GetComponent<PlayerStatus>()?.playerName.Value : "";
+                if (string.IsNullOrEmpty(targetName)) targetName = "PLAYER";
+                notification.Show($"{targetName.ToUpper()} WAS SHOT!");
+            }
+        }
+        else
+        {
+            if (isMyTurn) notification.Show("YOUR TURN");
+            else notification.Hide();
+        }
     }
 
     void RefreshButtons()
     {
-        if (gameManager == null) return;
-        bool isMyTurn = gameManager.isPlayersTurn(playerHand.Object.StateAuthority);
-        skipButton?.SetInteractable(isMyTurn);
+        if (roundManager == null) return;
+        bool isMyTurn = roundManager.isPlayersTurn(playerHand.Id);
+        stealButton?.SetInteractable(isMyTurn);
         knockButton?.SetInteractable(isMyTurn);
+        skipButton?.SetInteractable(isMyTurn);
     }
 
     void RefreshLifeBars()
     {
-        PlayerStatus[] statuses = FindObjectsByType<PlayerStatus>();
-        PlayerStatus mine = null;
-        foreach (var s in statuses)
-            if (s.Object.StateAuthority == playerHand.Object.StateAuthority) { mine = s; break; }
+        if (playerStatus == null && playerHand != null)
+            playerStatus = playerHand.GetComponent<PlayerStatus>();
 
-        lifeBars[0].style.display = mine != null ? DisplayStyle.Flex : DisplayStyle.None;
+        lifeBars[0].style.display = playerStatus != null ? DisplayStyle.Flex : DisplayStyle.None;
         lifeBars[1].style.display = DisplayStyle.None;
         lifeBars[2].style.display = DisplayStyle.None;
-        if (mine == null) return;
+        if (playerStatus == null) return;
 
-        lifeBars[0].SetValue((float)mine.lives / PlayerStatus.MaxLives);
-        bool isMyTurn = gameManager != null && gameManager.isPlayersTurn(playerHand.Object.StateAuthority);
+        lifeBars[0].SetValue((float)playerStatus.lives / PlayerStatus.MaxLives);
+        bool isMyTurn = roundManager != null && roundManager.isPlayersTurn(playerHand.Id);
         lifeBars[0].EnableInClassList("life-bar--turn", isMyTurn);
     }
+
+
 
     static readonly string[] SuitSymbols = { "♠", "♥", "♣", "♦" };
     static readonly string[] SuitClasses = { "spades", "hearts", "clubs", "diamonds" };

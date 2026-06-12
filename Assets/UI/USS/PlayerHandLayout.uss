@@ -45,6 +45,7 @@
 .ph-bottom {
     flex-direction: row;
     align-items: flex-end;
+    justify-content: center;
     padding: 20px 22px;
     padding-bottom: 68px;
     overflow: visible;
@@ -60,8 +61,10 @@
 }
 
 .ph-actions {
+    position: absolute;
+    left: calc(50% + 220px);
+    bottom: 68px;
     flex-direction: column;
-    margin-left: 24px;
     justify-content: flex-end;
 }
 
@@ -81,4 +84,39 @@
 
 .ph-life-bars > .life-bar {
     margin-right: 8px;
+}
+
+.ph-shooting-overlay {
+    position: absolute;
+    top: 25%;
+    left: 25%;
+    right: 25%;
+    bottom: 25%;
+    background-color: rgba(22, 22, 26, 0.95);
+    border-radius: 15px;
+    border-width: 3px;
+    border-color: rgb(195, 55, 55);
+    padding: 30px;
+    align-items: center;
+    justify-content: center;
+}
+
+.ph-shooting-title {
+    color: rgb(240, 240, 240);
+    font-size: 28px;
+    -unity-font-style: bold;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+}
+
+.ph-shooting-buttons {
+    flex-direction: column;
+    align-items: center;
+}
+
+.ph-shooting-buttons > .game-button {
+    margin-bottom: 12px;
 }

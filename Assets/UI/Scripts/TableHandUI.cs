@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using Fusion;
+using CoreGameplay;
 
 public class TableHandUI : MonoBehaviour
 {
@@ -7,9 +9,9 @@ public class TableHandUI : MonoBehaviour
 
     private UIDocument doc;
     private TableHand tableHand;
+    private VisualElement thRoot;
 
-    private readonly CardElement[] tableCards = new CardElement[3];
-    private GameButtonElement stealButton;
+
 
     void Awake()
     {
@@ -20,6 +22,7 @@ public class TableHandUI : MonoBehaviour
     void Start()
     {
         tableHand = FindAnyObjectByType<TableHand>();
+        if (doc != null) doc.enabled = true;
     }
 
     void BuildUI()
@@ -30,58 +33,53 @@ public class TableHandUI : MonoBehaviour
             foreach (var ss in styleSheets)
                 if (ss != null) root.styleSheets.Add(ss);
 
-        var thRoot = new VisualElement();
+        thRoot = new VisualElement();
         thRoot.AddToClassList("th-root");
         thRoot.pickingMode = PickingMode.Ignore;
+        thRoot.style.display = DisplayStyle.None;
 
-        var cardsRow = new VisualElement();
-        cardsRow.AddToClassList("th-cards-row");
-        cardsRow.pickingMode = PickingMode.Ignore;
-        for (int i = 0; i < 3; i++)
-        {
-            tableCards[i] = new CardElement();
-            tableCards[i].SetEmpty();
-            int idx = i;
-            tableCards[i].RegisterCallback<ClickEvent>(_ => PlayerHand.localHand?.selectTableCard(idx));
-            cardsRow.Add(tableCards[i]);
-        }
-        thRoot.Add(cardsRow);
 
-        stealButton = new GameButtonElement();
-        stealButton.AddToClassList("th-steal-btn");
-        stealButton.Setup(">> STEAL THE TABLE <<", GameButtonStyle.Special, () => PlayerHand.localHand?.stealTable());
-        stealButton.style.display = DisplayStyle.None;
-        thRoot.Add(stealButton);
 
         root.Add(thRoot);
 
         root.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Ignore);
-        foreach (var c in tableCards) c.pickingMode = PickingMode.Position;
-        stealButton.pickingMode = PickingMode.Position;
+
+    }
+
+    public void SetVisible(bool visible)
+    {
+        if (thRoot != null)
+        {
+            thRoot.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+        }
     }
 
     void Update()
     {
+        var localHand = PlayerHand.localHand;
+        bool isLocalPlayerSpawned = localHand != null && localHand.Object != null && localHand.Object.IsValid;
+
+        var roundManager = FindAnyObjectByType<GameManager>();
+        bool isShootingOrCooldown = roundManager != null && 
+                                    roundManager.Object != null && 
+                                    roundManager.Object.IsValid && 
+                                    (roundManager.phase == RoundPhase.Shooting || 
+                                     roundManager.phase == RoundPhase.Cooldown);
+
+        if (thRoot != null)
+        {
+            var targetDisplay = (isLocalPlayerSpawned && !isShootingOrCooldown) ? DisplayStyle.Flex : DisplayStyle.None;
+            if (thRoot.style.display != targetDisplay)
+                thRoot.style.display = targetDisplay;
+        }
+
+        if (!isLocalPlayerSpawned) return;
+
         if (tableHand == null)
-        {
             tableHand = FindAnyObjectByType<TableHand>();
-            return;
-        }
-        if (tableHand.Object == null || !tableHand.Object.IsValid) return;
 
-        bool isMyTurn = PlayerHand.localHand != null
-            && PlayerHand.localHand.Object != null
-            && FindAnyObjectByType<GameManager>() is GameManager gm
-            && gm.isPlayersTurn(PlayerHand.localHand.Object.StateAuthority);
+        if (tableHand == null || tableHand.Object == null || !tableHand.Object.IsValid) return;
 
-        for (int i = 0; i < 3; i++)
-        {
-            CardData card = tableHand.tableCards[i];
-            tableCards[i].style.opacity = card.number > 0 ? 1f : 0.25f;
-            if (card.number > 0) tableCards[i].SetCard(card);
-            else tableCards[i].SetEmpty();
-        }
 
-        stealButton.style.display = isMyTurn ? DisplayStyle.Flex : DisplayStyle.None;
     }
 }
