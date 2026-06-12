@@ -3,77 +3,127 @@ using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    private bool _jumpPressed;
-    private CharacterController _controller;
-    private float _verticalVelocity;
     private float _pitch;
     private float _yaw;
 
-    public float playerSpeed = 5f;
-    public float jumpForce = 10f;
-    public float lookSensitivity = 2f;
+    [Header("Screen Zones (0 to 1)")]
+    [Tooltip("Trigger left view if mouse X is below this (0.2 = left 20%)")]
+    public float leftZoneThreshold = 0.2f;
+    [Tooltip("Trigger right view if mouse X is above this (0.8 = right 20%)")]
+    public float rightZoneThreshold = 0.8f;
+    [Tooltip("Trigger bottom view if mouse Y is below this (0.2 = bottom 20%)")]
+    public float bottomZoneThreshold = 0.2f;
+
+    [Header("Preset Angles")]
+    [Tooltip("Default Pitch when looking center")]
+    public float centerPitch = 20f;
+    
+    [Tooltip("Yaw offset when looking left")]
+    public float leftYawOffset = -45f;
+    public float leftPitch = 15f;
+    
+    [Tooltip("Yaw offset when looking right")]
+    public float rightYawOffset = 45f;
+    public float rightPitch = 15f;
+    
+    [Tooltip("Yaw offset when looking down at cards")]
+    public float bottomYawOffset = 0f;
+    public float bottomPitch = 60f;
+
+    [Tooltip("How fast the camera moves to the new zone")]
+    public float transitionSpeed = 8f;
+
+    private float _targetPitch;
+    private float _targetYaw;
+    private float _baseYaw; 
 
     [Header("Camera Setup")]
     public Camera Camera;
     public Transform cameraPivot;
     public Transform cameraHandle;
 
+    [Header("Death Setup")]
+    public Transform deadTransformOverride;
+    public Transform playerVisualRoot;
+    private PlayerStatus _playerStatus;
+    private Vector3 _initialVisualLocalPos;
+    private Quaternion _initialVisualLocalRot;
+
+    [Header("Character Selection")]
+    public Transform playerBody;
+    public GameObject characterPrefab1;
+    public GameObject characterPrefab2;
+    public GameObject characterPrefab3;
+    public GameObject characterPrefab4;
+
+    [Networked, OnChangedRender(nameof(OnCharacterIndexChanged))]
+    private int characterIndex { get; set; }
+
     private void Awake()
     {
-        _controller = GetComponent<CharacterController>();
-
         if (Camera == null) Camera = Camera.main;
 
         if (cameraPivot == null || cameraHandle == null)
         {
             Debug.LogError($"[PlayerMovement] Camera components missing on {gameObject.name}! Please create 'CameraPivot' child with 'CameraHandle' sub-child.");
         }
+
+        _playerStatus = GetComponent<PlayerStatus>();
+        if (_playerStatus == null) _playerStatus = GetComponentInParent<PlayerStatus>();
+        if (_playerStatus == null) _playerStatus = GetComponentInChildren<PlayerStatus>();
+
+        if (playerVisualRoot != null)
+        {
+            _initialVisualLocalPos = playerVisualRoot.localPosition;
+            _initialVisualLocalRot = playerVisualRoot.localRotation;
+        }
     }
 
     public override void Spawned()
     {
-        _yaw = transform.eulerAngles.y;
-    }
+        _baseYaw = transform.eulerAngles.y;
+        _yaw = _baseYaw;
+        _pitch = centerPitch;
 
-    private void Update()
-    {
-        if (!Runner.GetVisible()) return;
-
-        if (Input.GetButtonDown("Jump"))
+        if (Object.HasStateAuthority)
         {
-            _jumpPressed = true;
+            characterIndex = Random.Range(0, 4);
         }
+        UpdateCharacterModel();
     }
 
     public override void FixedUpdateNetwork()
     {
         if (!Runner.GetVisible()) return;
+        if (!HasInputAuthority) return;
 
-        if (HasStateAuthority == false && HasInputAuthority == false) return;
+        float screenX = Input.mousePosition.x / Screen.width;
+        float screenY = Input.mousePosition.y / Screen.height;
 
-        float dt = Runner.DeltaTime;
-
-        _pitch = Mathf.Clamp(_pitch + Input.GetAxisRaw("Mouse Y") * lookSensitivity * -1f, -89f, 89f);
-        _yaw += Input.GetAxisRaw("Mouse X") * lookSensitivity;
-        transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
-
-        Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
-        Vector3 moveVelocity = transform.rotation * inputDirection.normalized * playerSpeed;
-
-        if (_controller.isGrounded)
+        if (screenY < bottomZoneThreshold)
         {
-            // small negative holds the controller against the ground each tick
-            _verticalVelocity = _jumpPressed ? jumpForce : -2f;
+            _targetYaw = _baseYaw + bottomYawOffset;
+            _targetPitch = bottomPitch;
+        }
+        else if (screenX < leftZoneThreshold)
+        {
+            _targetYaw = _baseYaw + leftYawOffset;
+            _targetPitch = leftPitch;
+        }
+        else if (screenX > rightZoneThreshold)
+        {
+            _targetYaw = _baseYaw + rightYawOffset;
+            _targetPitch = rightPitch;
         }
         else
         {
-            _verticalVelocity += Physics.gravity.y * 4f * dt;
+            _targetYaw = _baseYaw;
+            _targetPitch = centerPitch;
         }
 
-        moveVelocity.y = _verticalVelocity;
-        _controller.Move(moveVelocity * dt);
-
-        _jumpPressed = false;
+        float dt = Runner.DeltaTime;
+        _yaw = Mathf.Lerp(_yaw, _targetYaw, transitionSpeed * dt);
+        _pitch = Mathf.Lerp(_pitch, _targetPitch, transitionSpeed * dt);
     }
 
     public void LateUpdate()
@@ -81,7 +131,110 @@ public class PlayerMovement : NetworkBehaviour
         if (Object == null || !Object.HasInputAuthority || !Runner.GetVisible())
             return;
 
-        cameraPivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
-        Camera.main.transform.SetPositionAndRotation(cameraHandle.position, cameraHandle.rotation);
+        if (cameraPivot != null)
+        {
+            cameraPivot.localRotation = Quaternion.Euler(_pitch, _yaw - _baseYaw, 0f);
+        }
+        
+        if (Camera != null && cameraHandle != null)
+        {
+            Camera.transform.SetPositionAndRotation(cameraHandle.position, cameraHandle.rotation);
+        }
+    }
+
+    public override void Render()
+    {
+        if (Object == null || !Object.IsValid) return;
+
+        if (_playerStatus == null)
+        {
+            _playerStatus = GetComponent<PlayerStatus>();
+            if (_playerStatus == null) _playerStatus = GetComponentInParent<PlayerStatus>();
+            if (_playerStatus == null) _playerStatus = GetComponentInChildren<PlayerStatus>();
+        }
+
+        if (_playerStatus != null && _playerStatus.lives <= 0)
+        {
+            SeatedLookAtIK ik = GetComponent<SeatedLookAtIK>();
+            if (ik == null) ik = GetComponentInChildren<SeatedLookAtIK>();
+            if (ik != null && ik.enabled) ik.enabled = false;
+
+            Animator animator = GetComponent<Animator>();
+            if (animator == null) animator = GetComponentInChildren<Animator>();
+            if (animator != null && animator.enabled) animator.enabled = false;
+
+            if (deadTransformOverride != null && playerVisualRoot != null)
+            {
+                playerVisualRoot.position = deadTransformOverride.position;
+                playerVisualRoot.rotation = deadTransformOverride.rotation;
+            }
+
+            if (HasInputAuthority)
+            {
+                OrbitCamera orbitCam = FindAnyObjectByType<OrbitCamera>();
+                if (orbitCam != null && !orbitCam.enabled)
+                {
+                    orbitCam.enabled = true;
+                }
+            }
+        }
+        else
+        {
+            SeatedLookAtIK ik = GetComponent<SeatedLookAtIK>();
+            if (ik == null) ik = GetComponentInChildren<SeatedLookAtIK>();
+            if (ik != null && !ik.enabled) ik.enabled = true;
+
+            Animator animator = GetComponent<Animator>();
+            if (animator == null) animator = GetComponentInChildren<Animator>();
+            if (animator != null && !animator.enabled) animator.enabled = true;
+
+            if (playerVisualRoot != null && playerVisualRoot.localPosition != _initialVisualLocalPos)
+            {
+                playerVisualRoot.localPosition = _initialVisualLocalPos;
+                playerVisualRoot.localRotation = _initialVisualLocalRot;
+            }
+        }
+    }
+
+    private void OnCharacterIndexChanged()
+    {
+        UpdateCharacterModel();
+    }
+
+    private void UpdateCharacterModel()
+    {
+        if (playerBody == null)
+        {
+            playerBody = transform.Find("PlayerBody");
+        }
+
+        if (playerBody == null) return;
+
+        foreach (Transform child in playerBody)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+
+        GameObject prefabToSpawn = null;
+        switch (characterIndex)
+        {
+            case 0: prefabToSpawn = characterPrefab1; break;
+            case 1: prefabToSpawn = characterPrefab2; break;
+            case 2: prefabToSpawn = characterPrefab3; break;
+            case 3: prefabToSpawn = characterPrefab4; break;
+        }
+
+        if (prefabToSpawn != null)
+        {
+            Instantiate(prefabToSpawn, playerBody);
+        }
+
+        SeatedLookAtIK ik = GetComponent<SeatedLookAtIK>();
+        if (ik == null) ik = GetComponentInChildren<SeatedLookAtIK>();
+        if (ik != null)
+        {
+            ik.RefreshAnimator();
+        }
     }
 }

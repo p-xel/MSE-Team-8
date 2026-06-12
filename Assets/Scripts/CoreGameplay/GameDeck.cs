@@ -17,6 +17,8 @@ public class GameDeck : NetworkBehaviour
         {
             for (int rank = 1; rank <= 13; rank++)
             {
+                if (rank >= 2 && rank <= 5) continue;
+
                 CardData card = new CardData();
                 card.color = (CardColor)suit;
                 card.number = rank;
