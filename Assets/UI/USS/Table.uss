@@ -1,0 +1,51 @@
+.table {
+    width: 1120px;
+    max-width: 94%;
+    max-height: 640px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 2px;
+    border-color: rgb(60, 60, 70);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table--narrow {
+    width: 620px;
+    margin-bottom: 24px;
+}
+
+.table_header {
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(80, 80, 95);
+    padding: 20px 26px;
+}
+
+.table_body {
+    flex-grow: 1;
+}
+
+.table_row {
+    flex-direction: row;
+    padding: 16px 26px;
+}
+
+.table_row--alt {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.table_header-cell {
+    color: rgb(150, 170, 220);
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-left;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.table_cell {
+    color: rgb(225, 225, 230);
+    font-size: 20px;
+    -unity-text-align: middle-left;
+}

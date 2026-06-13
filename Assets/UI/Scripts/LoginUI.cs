@@ -8,8 +8,8 @@ public class LoginUI : MonoBehaviour
     [SerializeField] StyleSheet[] styleSheets;
 
     public event Action BackClicked;
-    public event Action<string> LoginSubmitted;
-    public event Action<string> RegisterSubmitted;
+    public event Action<string, string> LoginSubmitted;
+    public event Action<string, string> RegisterSubmitted;
 
     private UIDocument doc;
     private TextField usernameField;
@@ -55,11 +55,11 @@ public class LoginUI : MonoBehaviour
         card.Add(MakeField("PASSWORD", true, out passwordField));
 
         var login = new FormButtonElement();
-        login.Setup("LOG IN", () => LoginSubmitted?.Invoke(usernameField.value));
+        login.Setup("LOG IN", () => LoginSubmitted?.Invoke(usernameField.value, passwordField.value));
         card.Add(login);
 
         var register = new FormButtonElement();
-        register.Setup("CREATE ACCOUNT", () => RegisterSubmitted?.Invoke(usernameField.value), FormButtonStyle.Danger);
+        register.Setup("CREATE ACCOUNT", () => RegisterSubmitted?.Invoke(usernameField.value, passwordField.value), FormButtonStyle.Danger);
         card.Add(register);
 
         screen.Add(card);
