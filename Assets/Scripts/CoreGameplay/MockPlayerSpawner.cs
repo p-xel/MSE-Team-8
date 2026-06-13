@@ -7,11 +7,36 @@ public class MockPlayerSpawner : SimulationBehaviour
     public GameObject PlayerPrefab;
     
     [Tooltip("The index used to determine which spawn point to use for the mock player")]
-    public int currentSpawnIndex = 1; 
+    public int currentSpawnIndex = 1;
+
+    private bool _pendingBotsSpawned;
+
+    private NetworkRunner ActiveRunner
+    {
+        get
+        {
+            if (Runner != null) return Runner;
+            foreach (var r in NetworkRunner.Instances)
+                if (r != null && r.IsRunning) return r;
+            return null;
+        }
+    }
 
     private void Update()
     {
-        if (Runner == null || !Runner.IsRunning || !Runner.GetVisible()) return;
+        var runner = ActiveRunner;
+        if (runner == null || !runner.IsRunning) return;
+
+        if (!_pendingBotsSpawned && Session.PendingBotCount > 0)
+        {
+            int count = Session.PendingBotCount;
+            Session.PendingBotCount = 0;
+            _pendingBotsSpawned = true;
+            for (int i = 0; i < count; i++)
+            {
+                SpawnMockPlayer();
+            }
+        }
 
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -21,8 +46,11 @@ public class MockPlayerSpawner : SimulationBehaviour
 
     public void SpawnMockPlayer()
     {
-        bool canSpawn = (Runner.GameMode == GameMode.Shared) || Runner.IsServer;
-        
+        var runner = ActiveRunner;
+        if (runner == null) return;
+
+        bool canSpawn = (runner.GameMode == GameMode.Shared) || runner.IsServer;
+
         if (!canSpawn)
         {
             Debug.LogWarning("You do not have authority to spawn mock players.");
@@ -36,9 +64,9 @@ public class MockPlayerSpawner : SimulationBehaviour
         }
 
         Vector3 spawnPos = GetSpawnPosition(currentSpawnIndex, out Quaternion spawnRot);
-        
-        Runner.Spawn(PlayerPrefab, spawnPos, spawnRot, PlayerRef.None);
-        
+
+        runner.Spawn(PlayerPrefab, spawnPos, spawnRot, PlayerRef.None);
+
         Debug.Log($"Spawned mock player at spawn index {currentSpawnIndex}");
         currentSpawnIndex++;
     }

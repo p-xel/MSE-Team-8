@@ -8,6 +8,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] StyleSheet[] styleSheets;
 
     public event Action PlayClicked;
+    public event Action SoloClicked;
     public event Action SettingsClicked;
     public event Action StatsClicked;
     public event Action LeaderboardClicked;
@@ -68,6 +69,10 @@ public class MainMenuUI : MonoBehaviour
         play.Setup("PLAY", () => PlayClicked?.Invoke());
         play.SetInteractable(Session.IsLoggedIn);
         items.Add(play);
+
+        var solo = new MenuButtonElement();
+        solo.Setup("SOLO VS BOTS", () => SoloClicked?.Invoke());
+        items.Add(solo);
 
         var settings = new MenuButtonElement();
         settings.Setup("SETTINGS", () => SettingsClicked?.Invoke());

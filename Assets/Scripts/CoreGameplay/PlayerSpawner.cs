@@ -1,11 +1,23 @@
 using UnityEngine;
 using Fusion;
-using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
 {
     public GameObject PlayerPrefab;
+
+    private bool _spawnCatchupDone;
+
+    private NetworkRunner ActiveRunner
+    {
+        get
+        {
+            if (Runner != null) return Runner;
+            foreach (var r in NetworkRunner.Instances)
+                if (r != null && r.IsRunning) return r;
+            return null;
+        }
+    }
 
     private void OnEnable()
     {
@@ -22,39 +34,74 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
         RepositionLocalPlayer();
     }
 
+    private void Update()
+    {
+        if (_spawnCatchupDone) return;
+
+        var runner = ActiveRunner;
+        if (runner == null || !runner.IsRunning) return;
+
+        bool sessionHasPlayers = false;
+        foreach (PlayerRef player in runner.ActivePlayers)
+        {
+            sessionHasPlayers = true;
+            TrySpawnFor(runner, player);
+        }
+
+        if (sessionHasPlayers)
+        {
+            DisableOrbitForLocal();
+            _spawnCatchupDone = true;
+        }
+    }
+
     void IPlayerJoined.PlayerJoined(PlayerRef player)
     {
-        bool shouldSpawn = false;
-        if (Runner.GameMode == GameMode.Shared)
+        var runner = ActiveRunner;
+        if (runner == null) return;
+        TrySpawnFor(runner, player);
+
+        if (player == runner.LocalPlayer)
+            DisableOrbitForLocal();
+    }
+
+    private void TrySpawnFor(NetworkRunner runner, PlayerRef player)
+    {
+        bool shouldSpawn = runner.GameMode == GameMode.Shared
+            ? (player == runner.LocalPlayer)
+            : runner.IsServer;
+        if (!shouldSpawn) return;
+
+        if (PlayerPrefab == null)
         {
-            shouldSpawn = (player == Runner.LocalPlayer);
-        }
-        else
-        {
-            shouldSpawn = Runner.IsServer;
+            Debug.LogError("[PlayerSpawner] Cannot spawn player: PlayerPrefab is null!");
+            return;
         }
 
-        if (shouldSpawn)
-        {
-            if (PlayerPrefab == null)
-            {
-                Debug.LogError("[PlayerSpawner] Cannot spawn player: PlayerPrefab is null!");
-                return;
-            }
+        if (IsPlayerSpawned(player)) return;
 
-            int playerIndex = GetPlayerIndex(player);
-            Vector3 spawnPos = GetSpawnPosition(playerIndex, out Quaternion spawnRot);
-            Runner.Spawn(PlayerPrefab, spawnPos, spawnRot, player);
-        }
+        int playerIndex = GetPlayerIndex(player);
+        Vector3 spawnPos = GetSpawnPosition(playerIndex, out Quaternion spawnRot);
+        Debug.Log($"[Seat] {player} id={player.PlayerId} seat={playerIndex} pos={spawnPos} session={runner.SessionInfo?.Name} local={runner.LocalPlayer.PlayerId}");
+        runner.Spawn(PlayerPrefab, spawnPos, spawnRot, player);
+    }
 
-        if (player == Runner.LocalPlayer)
+    private bool IsPlayerSpawned(PlayerRef player)
+    {
+        PlayerMovement[] allMovements = FindObjectsByType<PlayerMovement>();
+        foreach (PlayerMovement pm in allMovements)
         {
-            OrbitCamera orbitCam = FindAnyObjectByType<OrbitCamera>();
-            if (orbitCam != null)
-            {
-                orbitCam.enabled = false;
-            }
+            if (pm.Object != null && pm.Object.IsValid && pm.Object.InputAuthority == player)
+                return true;
         }
+        return false;
+    }
+
+    private void DisableOrbitForLocal()
+    {
+        OrbitCamera orbitCam = FindAnyObjectByType<OrbitCamera>();
+        if (orbitCam != null)
+            orbitCam.enabled = false;
     }
 
     void IPlayerLeft.PlayerLeft(PlayerRef player)
@@ -82,13 +129,7 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
 
     private int GetPlayerIndex(PlayerRef player)
     {
-        var activePlayers = new List<PlayerRef>(Runner.ActivePlayers);
-        if (!activePlayers.Contains(player))
-        {
-            activePlayers.Add(player);
-        }
-        activePlayers.Sort((a, b) => a.PlayerId.CompareTo(b.PlayerId));
-        return activePlayers.IndexOf(player);
+        return Mathf.Max(0, player.PlayerId - 1);
     }
 
     private Vector3 GetSpawnPosition(int playerIndex, out Quaternion rotation)
@@ -130,14 +171,15 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
 
     private void RepositionLocalPlayer()
     {
-        if (Runner == null || !Runner.IsRunning) return;
+        var runner = ActiveRunner;
+        if (runner == null || !runner.IsRunning) return;
 
         PlayerMovement[] allPlayers = FindObjectsByType<PlayerMovement>();
         foreach (PlayerMovement playerMovement in allPlayers)
         {
             if (playerMovement.Object != null && playerMovement.Object.HasInputAuthority)
             {
-                int playerIndex = GetPlayerIndex(Runner.LocalPlayer);
+                int playerIndex = GetPlayerIndex(runner.LocalPlayer);
                 if (playerIndex >= 0)
                 {
                     Vector3 spawnPos = GetSpawnPosition(playerIndex, out Quaternion spawnRot);

@@ -45,6 +45,7 @@ public class AudioManager : MonoBehaviour
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
+        AudioListener.volume = Session.Volume;
     }
 
     public static void PlayCardSwap()

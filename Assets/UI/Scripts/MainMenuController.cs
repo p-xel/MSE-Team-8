@@ -4,6 +4,7 @@ using UnityEngine;
 public class MainMenuController : MonoBehaviour
 {
     [SerializeField] MainMenuUI menu;
+    [SerializeField] RoomFinderUI roomFinder;
     [SerializeField] LoginUI login;
     [SerializeField] AccountUI account;
     [SerializeField] LeaderboardUI leaderboard;
@@ -15,8 +16,11 @@ public class MainMenuController : MonoBehaviour
 
     void Awake()
     {
-        screens = new MonoBehaviour[] { menu, login, account, leaderboard, myStats, myMatches, settings };
+        screens = new MonoBehaviour[] { menu, roomFinder, login, account, leaderboard, myStats, myMatches, settings };
 
+        menu.PlayClicked += () => Show(roomFinder);
+        menu.SoloClicked += () => NetworkLauncher.Instance?.LaunchSoloVsBots();
+        roomFinder.BackClicked += () => Show(menu);
         menu.AccountClicked += OnAccount;
         menu.LeaderboardClicked += () => Show(leaderboard);
         menu.StatsClicked += () => Show(myStats);
