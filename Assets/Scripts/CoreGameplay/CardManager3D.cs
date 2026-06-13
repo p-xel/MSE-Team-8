@@ -49,6 +49,17 @@ public class CardManager3D : MonoBehaviour
                 tableVisuals.cards[i] = SpawnCard(GetTableSlotPosition(i), GetTableSlotRotation(), i, true);
             }
         }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (tableVisuals.cards[i] != null && !tableVisuals.isHiding[i])
+                {
+                    tableVisuals.cards[i].transform.position = GetTableSlotPosition(i);
+                    tableVisuals.cards[i].transform.rotation = GetTableSlotRotation();
+                }
+            }
+        }
 
         CardData[] currentData = new CardData[3];
         for (int i = 0; i < 3; i++)
@@ -323,8 +334,15 @@ public class CardManager3D : MonoBehaviour
 
         if (anchor == null) return Vector3.zero;
 
+        Quaternion localRot = anchor.rotation;
+        if (PlayerHand.localHand != null)
+        {
+            float playerYaw = PlayerHand.localHand.transform.eulerAngles.y;
+            localRot = Quaternion.Euler(anchor.eulerAngles.x, playerYaw, anchor.eulerAngles.z);
+        }
+
         float offset = (index - 1) * tableCardSpacing;
-        return anchor.TransformPoint(new Vector3(offset, 0.05f, 0f));
+        return anchor.position + localRot * new Vector3(offset, 0.05f, 0f);
     }
 
     private Quaternion GetTableSlotRotation()
@@ -341,6 +359,12 @@ public class CardManager3D : MonoBehaviour
         }
 
         if (anchor == null) return Quaternion.identity;
+
+        if (PlayerHand.localHand != null)
+        {
+            float playerYaw = PlayerHand.localHand.transform.eulerAngles.y;
+            return Quaternion.Euler(anchor.eulerAngles.x, playerYaw, anchor.eulerAngles.z);
+        }
         return anchor.rotation;
     }
 
