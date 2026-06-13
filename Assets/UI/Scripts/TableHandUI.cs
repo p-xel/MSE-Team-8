@@ -66,6 +66,7 @@ public class TableHandUI : MonoBehaviour
                                     (roundManager.phase == RoundPhase.Shooting || 
                                      roundManager.phase == RoundPhase.Cooldown);
 
+        // Hide the table hand UI elements during shooting or cooldown phases to clean up the screen.
         if (thRoot != null)
         {
             var targetDisplay = (isLocalPlayerSpawned && !isShootingOrCooldown) ? DisplayStyle.Flex : DisplayStyle.None;

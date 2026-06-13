@@ -64,6 +64,7 @@ public class PlayerHandUI : MonoBehaviour
 
     void BuildUI()
     {
+        // Programmatically build UI Toolkit hierarchy, applying style sheets and setting default values.
         var root = doc.rootVisualElement;
         root.pickingMode = PickingMode.Ignore;
         if (styleSheets != null)
@@ -202,6 +203,7 @@ public class PlayerHandUI : MonoBehaviour
             NetworkBehaviourId currentShotTarget = roundManager.shotTargetHandId;
             if (currentShotTarget != lastShotTargetId)
             {
+                // Trigger gunshot sound effect when a player gets shot.
                 if (currentShotTarget != default)
                 {
                     AudioManager.PlayShoot();
@@ -450,6 +452,7 @@ public class PlayerHandUI : MonoBehaviour
         if (c0.number == 0 && c1.number == 0 && c2.number == 0)
             return ("0", "♠", "spades");
 
+        // Format three of a kind as "30½" for display, matching the 30.5 float value in the scoring rules.
         if (c0.number > 0 && c0.number == c1.number && c1.number == c2.number)
             return ("30½", SuitSymbols[(int)c0.color], SuitClasses[(int)c0.color]);
 

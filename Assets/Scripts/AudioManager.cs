@@ -32,6 +32,7 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
+        // Prevent duplicate AudioManager instances from coexisting in the scene.
         if (_instance != null && _instance != this)
         {
             Destroy(gameObject);

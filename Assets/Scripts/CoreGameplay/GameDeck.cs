@@ -17,6 +17,7 @@ public class GameDeck : NetworkBehaviour
         {
             for (int rank = 1; rank <= 13; rank++)
             {
+                // Skip ranks 2 to 5 to construct the 31-card deck.
                 if (rank >= 2 && rank <= 5) continue;
 
                 CardData card = new CardData();

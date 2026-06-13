@@ -46,6 +46,7 @@ public class PhysicalCard : MonoBehaviour
 
     private void BuildUI()
     {
+        // Set up the UI Toolkit root and bind stylesheets.
         var root = uiDocument.rootVisualElement;
         root.Clear();
         root.pickingMode = PickingMode.Ignore;
@@ -103,6 +104,7 @@ public class PhysicalCard : MonoBehaviour
     private void UpdateVisualHeight()
     {
         float targetY = baseLocalPos.y;
+        // Selection takes priority over hover for card height offset.
         if (isSelected)
         {
             targetY += selectHeight;

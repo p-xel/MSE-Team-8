@@ -17,15 +17,15 @@ public class PlayerMovement : NetworkBehaviour
     [Header("Preset Angles")]
     [Tooltip("Default Pitch when looking center")]
     public float centerPitch = 20f;
-    
+
     [Tooltip("Yaw offset when looking left")]
     public float leftYawOffset = -45f;
     public float leftPitch = 15f;
-    
+
     [Tooltip("Yaw offset when looking right")]
     public float rightYawOffset = 45f;
     public float rightPitch = 15f;
-    
+
     [Tooltip("Yaw offset when looking down at cards")]
     public float bottomYawOffset = 0f;
     public float bottomPitch = 60f;
@@ -35,7 +35,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private float _targetPitch;
     private float _targetYaw;
-    private float _baseYaw; 
+    private float _baseYaw;
 
     [Header("Camera Setup")]
     public Camera Camera;
@@ -118,6 +118,7 @@ public class PlayerMovement : NetworkBehaviour
 
         if (!HasInputAuthority) return;
 
+        // Normalize mouse coordinates to 0..1 screen ratio to check which screen zone the mouse is hovering.
         float screenX = Input.mousePosition.x / Screen.width;
         float screenY = Input.mousePosition.y / Screen.height;
 
@@ -142,6 +143,7 @@ public class PlayerMovement : NetworkBehaviour
             _targetPitch = centerPitch;
         }
 
+        // Smoothly interpolate the camera angles towards the targeted look zone.
         float dt = Runner.DeltaTime;
         _yaw = Mathf.Lerp(_yaw, _targetYaw, transitionSpeed * dt);
         _pitch = Mathf.Lerp(_pitch, _targetPitch, transitionSpeed * dt);
@@ -156,6 +158,7 @@ public class PlayerMovement : NetworkBehaviour
         if (_playerStatus != null)
         {
             int lives = _playerStatus.lives;
+            // Trigger a camera shake animation when the player loses a life.
             if (_lastLives >= 0 && lives < _lastLives) _shakeTimer = shakeDuration;
             _lastLives = lives;
         }
@@ -197,6 +200,7 @@ public class PlayerMovement : NetworkBehaviour
 
         if (_playerStatus != null && _playerStatus.lives <= 0)
         {
+            // Disable animations and IK look-at rigs upon death, and override visual transform.
             SeatedLookAtIK ik = GetComponent<SeatedLookAtIK>();
             if (ik == null) ik = GetComponentInChildren<SeatedLookAtIK>();
             if (ik != null && ik.enabled) ik.enabled = false;
@@ -211,6 +215,7 @@ public class PlayerMovement : NetworkBehaviour
                 playerVisualRoot.rotation = deadTransformOverride.rotation;
             }
 
+            // Enable the spectator camera for local player upon death.
             if (HasInputAuthority)
             {
                 OrbitCamera orbitCam = FindAnyObjectByType<OrbitCamera>();

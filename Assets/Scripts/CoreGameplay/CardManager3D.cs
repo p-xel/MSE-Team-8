@@ -162,6 +162,7 @@ public class CardManager3D : MonoBehaviour
             {
                 visuals.cachedData[i] = newCard;
 
+                // Compare old and new network card values to determine if a swap animation should trigger.
                 if (oldCard.number != 0 && newCard.number != 0)
                 {
                     TriggerSwapAnimation(isTable, handId, i, oldCard, newCard);
@@ -261,6 +262,7 @@ public class CardManager3D : MonoBehaviour
         pFlyHandToTable.SetCardData(oldHandCard);
         pFlyTableToHand.SetCardData(showFace ? oldTableCard : default);
 
+        // Interpolate position with a sine-wave offset to create a flying arc, and slerp rotations/scales.
         Tween.Custom(0f, 1f, flightDuration, t =>
         {
             if (flyHandToTable != null)
@@ -335,6 +337,7 @@ public class CardManager3D : MonoBehaviour
         if (anchor == null) return Vector3.zero;
 
         Quaternion localRot = anchor.rotation;
+        // Align the table layout yaw with the local player's yaw to keep cards oriented towards them.
         if (PlayerHand.localHand != null)
         {
             float playerYaw = PlayerHand.localHand.transform.eulerAngles.y;

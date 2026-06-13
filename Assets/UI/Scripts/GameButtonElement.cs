@@ -16,6 +16,7 @@ public partial class GameButtonElement : VisualElement
         label.AddToClassList("game-button_label");
         Add(label);
 
+        // Register UI Toolkit click event listener to play sound and invoke custom callback actions.
         RegisterCallback<ClickEvent>(_ => {
             AudioManager.PlayButtonClick();
             clickAction?.Invoke();
@@ -31,6 +32,7 @@ public partial class GameButtonElement : VisualElement
         RemoveFromClassList("game-button--danger");
         RemoveFromClassList("game-button--special");
 
+        // Dynamically toggle USS class names on the visual element depending on the requested style.
         string styleClass = style switch
         {
             GameButtonStyle.Primary => "game-button--primary",

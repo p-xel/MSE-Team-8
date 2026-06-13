@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class MockPlayerSpawner : SimulationBehaviour
 {
     public GameObject PlayerPrefab;
-    
+
     [Tooltip("The index used to determine which spawn point to use for the mock player")]
     public int currentSpawnIndex = 1;
 
@@ -27,6 +27,7 @@ public class MockPlayerSpawner : SimulationBehaviour
         var runner = ActiveRunner;
         if (runner == null || !runner.IsRunning) return;
 
+        // Check if there are bots queued to be spawned from the matchmaking session, and spawn them.
         if (!_pendingBotsSpawned && Session.PendingBotCount > 0)
         {
             int count = Session.PendingBotCount;
@@ -74,11 +75,12 @@ public class MockPlayerSpawner : SimulationBehaviour
     private Vector3 GetSpawnPosition(int index, out Quaternion rotation)
     {
         rotation = Quaternion.identity;
-        int sIndex = index % 4; 
-        string pName = $"P{sIndex + 1}"; 
+        int sIndex = index % 4;
+        string pName = $"P{sIndex + 1}";
 
+        // Lookup: search for "P1", "P2"..., directly or under a parent "Spawn" folder.
         GameObject pObj = GameObject.Find(pName);
-        
+
         if (pObj == null)
         {
             GameObject spawnParent = GameObject.Find("Spawn");
@@ -100,7 +102,7 @@ public class MockPlayerSpawner : SimulationBehaviour
                 rotation = spawnChild.rotation;
                 return spawnChild.position;
             }
-            
+
             rotation = pObj.transform.rotation;
             return pObj.transform.position;
         }

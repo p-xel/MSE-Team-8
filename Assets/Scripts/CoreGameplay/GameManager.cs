@@ -386,8 +386,10 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
 
     private float computeHandValue(CardData c0, CardData c1, CardData c2)
     {
+        // Three of a kind (same rank) valued at 30.5 points.
         if (c0.number > 0 && c0.number == c1.number && c1.number == c2.number)
             return 30.5f;
+        // Otherwise, score is the sum of cards of the same suit, we return the highest suit total.
         int[] totals = new int[4];
         foreach (CardData c in new[] { c0, c1, c2 })
             if (c.number > 0) totals[(int)c.color] += c.gameValue;
@@ -430,6 +432,7 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
             if (targetStatus != null && targetStatus.lives > 0)
             {
                 float targetValue = computeHandValue(targetHand.myCards[0], targetHand.myCards[1], targetHand.myCards[2]);
+                // If target has three of a kind (30.5 points), they deflect the shot.
                 bool deflected = Mathf.Approximately(targetValue, 30.5f);
 
                 if (deflected)
@@ -501,6 +504,8 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
             if (status == null || status.lives <= 0)
                 continue;
 
+            // Calculate dot product between camera forward and direction to other players
+            // to find the player closest to the screen center look direction.
             Vector3 toTarget = (hand.transform.position - cam.transform.position).normalized;
             float dot = Vector3.Dot(cam.transform.forward, toTarget);
 

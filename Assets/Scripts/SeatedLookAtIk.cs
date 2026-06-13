@@ -11,9 +11,6 @@ public class SeatedLookAtIK : MonoBehaviour
     public float headWeight = 0.8f;
     public float clampWeight = 0.5f;
 
-    public bool showDebugLogs = false;
-    private bool hasReceivedIKCallback = false;
-
     private void Awake()
     {
         RefreshAnimator();
@@ -24,6 +21,7 @@ public class SeatedLookAtIK : MonoBehaviour
         animator = GetComponent<Animator>();
         if (animator == null)
         {
+            // If the Animator is on a child object, attach an IK proxy to forward callbacks to the parent.
             animator = GetComponentInChildren<Animator>();
             if (animator != null)
             {
@@ -40,39 +38,6 @@ public class SeatedLookAtIK : MonoBehaviour
     private void Start()
     {
         FindPlayerCamera();
-        ValidateSetup();
-        StartCoroutine(CheckIKCallbackActive());
-    }
-
-    private void ValidateSetup()
-    {
-        Animator rootAnimator = GetComponent<Animator>();
-        Animator childAnimator = GetComponentInChildren<Animator>();
-
-        if (rootAnimator == null && childAnimator != null)
-        {
-            Debug.LogWarning($"[SeatedLookAtIK] Animator is on child {childAnimator.name}. Proxy has been attached to forward IK callbacks.");
-        }
-        else if (rootAnimator == null && childAnimator == null)
-        {
-            Debug.LogError($"[SeatedLookAtIK] No Animator found on this GameObject or children.");
-        }
-        else
-        {
-            if (rootAnimator != null && !rootAnimator.isHuman)
-            {
-                Debug.LogError($"[SeatedLookAtIK] Animator on {gameObject.name} is not Humanoid. LookAt IK requires a Humanoid avatar.");
-            }
-        }
-    }
-
-    private System.Collections.IEnumerator CheckIKCallbackActive()
-    {
-        yield return new WaitForSeconds(2f);
-        if (!hasReceivedIKCallback && animator != null && animator.enabled)
-        {
-            Debug.LogWarning($"[SeatedLookAtIK] OnAnimatorIK is not being called. Make sure IK Pass is enabled on your Animator Controller layer.");
-        }
     }
 
     private void OnAnimatorIK(int layerIndex)
@@ -85,13 +50,6 @@ public class SeatedLookAtIK : MonoBehaviour
 
     public void OnAnimatorIKCallback(int layerIndex)
     {
-        hasReceivedIKCallback = true;
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"[SeatedLookAtIK] OnAnimatorIKCallback: layer={layerIndex}, animator={animator.name}, camera={targetCamera != null}");
-        }
-
         if (animator == null) return;
 
         if (targetCamera == null)
@@ -105,6 +63,7 @@ public class SeatedLookAtIK : MonoBehaviour
             var netObj = GetComponentInParent<Fusion.NetworkObject>();
             if (netObj == null) netObj = GetComponentInChildren<Fusion.NetworkObject>();
 
+            // Local player looks down their camera view ray, while remote players look directly at the player camera position.
             if (netObj != null && netObj.HasInputAuthority)
             {
                 lookPosition = targetCamera.transform.position + targetCamera.transform.forward * lookDistance;
@@ -127,6 +86,7 @@ public class SeatedLookAtIK : MonoBehaviour
     {
         if (targetCamera != null) return;
 
+        // Resolve the camera reference.
         var movement = GetComponentInParent<PlayerMovement>();
         if (movement == null)
         {
@@ -149,34 +109,6 @@ public class SeatedLookAtIK : MonoBehaviour
             {
                 targetCamera = Camera.main;
             }
-        }
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"[SeatedLookAtIK] FindPlayerCamera resolved targetCamera: {(targetCamera != null ? targetCamera.name : "null")}");
-        }
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (targetCamera != null)
-        {
-            Gizmos.color = Color.yellow;
-            Vector3 lookPosition;
-            var netObj = GetComponentInParent<Fusion.NetworkObject>();
-            if (netObj == null) netObj = GetComponentInChildren<Fusion.NetworkObject>();
-
-            if (netObj != null && netObj.HasInputAuthority)
-            {
-                lookPosition = targetCamera.transform.position + targetCamera.transform.forward * lookDistance;
-            }
-            else
-            {
-                lookPosition = targetCamera.transform.position;
-            }
-
-            Gizmos.DrawLine(transform.position + Vector3.up * 1.5f, lookPosition);
-            Gizmos.DrawSphere(lookPosition, 0.2f);
         }
     }
 }

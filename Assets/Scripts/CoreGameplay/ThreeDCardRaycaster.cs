@@ -25,6 +25,7 @@ public class ThreeDCardRaycaster : MonoBehaviour
             return;
         }
 
+        // Cast a ray from the mouse cursor position into the 3D physics scene on the card layer.
         Ray ray = cachedCamera.ScreenPointToRay(Input.mousePosition);
         PhysicalCard hitCard = null;
 
@@ -35,6 +36,7 @@ public class ThreeDCardRaycaster : MonoBehaviour
                 hitCard = candidate;
         }
 
+        // Toggle hover states dynamically when the hovered card changes.
         if (hitCard != currentHoveredCard)
         {
             ClearHover();

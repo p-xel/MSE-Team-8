@@ -57,6 +57,7 @@ public class PlayerHand : NetworkBehaviour
             return;
         }
 
+        // Only run the bot routine on the State Authority if the player has no Input Authority (meaning it's a bot).
         if (Object.InputAuthority != PlayerRef.None) return;
 
         if (roundManager == null) roundManager = FindAnyObjectByType<GameManager>();
@@ -86,6 +87,7 @@ public class PlayerHand : NetworkBehaviour
             return;
         }
 
+        // Weighted decision rolls for Bot behaviour (55% Swap, 15% Steal, 15% Knock, 15% Skip).
         float roll = Random.value;
         if (roll < 0.55f)
         {

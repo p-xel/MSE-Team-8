@@ -41,6 +41,7 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
         var runner = ActiveRunner;
         if (runner == null || !runner.IsRunning) return;
 
+        // Perform late-join catchup spawning for any active players already in the session.
         bool sessionHasPlayers = false;
         foreach (PlayerRef player in runner.ActivePlayers)
         {
@@ -183,6 +184,7 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
                 if (playerIndex >= 0)
                 {
                     Vector3 spawnPos = GetSpawnPosition(playerIndex, out Quaternion spawnRot);
+                    // Use NetworkTransform.Teleport to reposition the player.
                     NetworkTransform nt = playerMovement.GetComponent<NetworkTransform>();
                     if (nt != null)
                     {
@@ -203,7 +205,6 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
     {
         GameObject obj = GameObject.Find(name);
         if (obj != null) return obj;
-
         var activeScene = SceneManager.GetActiveScene();
         GameObject[] rootObjects = activeScene.GetRootGameObjects();
         foreach (GameObject root in rootObjects)
