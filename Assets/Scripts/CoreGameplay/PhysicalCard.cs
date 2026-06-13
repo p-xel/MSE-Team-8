@@ -13,6 +13,7 @@ public class PhysicalCard : MonoBehaviour
 
     public int CardIndex { get; set; }
     public bool IsTableCard { get; set; }
+    public bool IsInteractable { get; set; } = true;
     public Transform VisualPivot => visualPivot;
 
     private UIDocument uiDocument;

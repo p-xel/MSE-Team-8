@@ -30,7 +30,9 @@ public class ThreeDCardRaycaster : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f, cardLayer))
         {
-            hitCard = hit.collider.GetComponentInParent<PhysicalCard>();
+            PhysicalCard candidate = hit.collider.GetComponentInParent<PhysicalCard>();
+            if (candidate != null && candidate.IsInteractable)
+                hitCard = candidate;
         }
 
         if (hitCard != currentHoveredCard)

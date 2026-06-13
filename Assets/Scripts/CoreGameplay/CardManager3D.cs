@@ -226,6 +226,8 @@ public class CardManager3D : MonoBehaviour
         PhysicalCard pFlyHandToTable = flyHandToTable.GetComponent<PhysicalCard>();
         PhysicalCard pFlyTableToHand = flyTableToHand.GetComponent<PhysicalCard>();
 
+        pFlyHandToTable.IsInteractable = false;
+        pFlyTableToHand.IsInteractable = false;
         pFlyHandToTable.SetCardData(oldHandCard);
         pFlyTableToHand.SetCardData(showFace ? oldTableCard : default);
 
@@ -268,9 +270,11 @@ public class CardManager3D : MonoBehaviour
     private void TriggerDrawAnimation(PhysicalCard card, CardData data)
     {
         card.SetCardData(data);
+        card.IsInteractable = false;
         Vector3 originalPos = card.transform.position;
         card.transform.position = originalPos + Vector3.up * 1f;
-        Tween.Position(card.transform, originalPos, flightDuration, Ease.OutQuad);
+        Tween.Position(card.transform, originalPos, flightDuration, Ease.OutQuad)
+            .OnComplete(() => { if (card != null) card.IsInteractable = true; });
         AudioManager.PlayCardDraw();
     }
 
