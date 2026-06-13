@@ -1,0 +1,43 @@
+.main-menu {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+    align-items: center;
+    justify-content: center;
+}
+
+.main-menu_account-box {
+    position: absolute;
+    top: 32px;
+    right: 48px;
+    align-items: flex-end;
+}
+
+.main-menu_pseudo {
+    color: rgb(120, 200, 140);
+    font-size: 40px;
+    letter-spacing: 2px;
+    margin-top: 4px;
+    -unity-text-align: upper-right;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.main-menu_center {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-menu_logo {
+    width: 380px;
+    height: 380px;
+    margin-bottom: 16px;
+    background-image: url('../Assets/project31_transparent.png');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.main-menu_items {
+    align-items: center;
+    justify-content: center;
+}
