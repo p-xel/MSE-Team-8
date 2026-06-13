@@ -9,7 +9,7 @@ public class ApiClient : MonoBehaviour
 {
     public static ApiClient Instance { get; private set; }
 
-    [SerializeField] string baseUrl = "http://localhost:8080/api";
+    [SerializeField] string baseUrl = "https://project31-unity-test.cleverapps.io/api";
 
     void Awake()
     {

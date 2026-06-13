@@ -3,13 +3,7 @@
     flex-grow: 1;
     height: 100%;
     border-radius: 4px;
-    border-width: 5px;
-    border-color: rgba(0, 0, 0, 0);
     padding: 2px;
-}
-
-.life-bar--turn {
-    border-color: rgb(255, 140, 0);
 }
 
 .life-bar_chunk {
@@ -22,7 +16,13 @@
 }
 
 .life-bar_chunk--filled {
-    background-color: rgb(58, 185, 80);
+    background-color: rgb(60, 200, 90);
+    border-width: 4px;
+    border-color: rgb(0, 0, 0);
+}
+
+.life-bar--turn .life-bar_chunk--filled {
+    background-color: rgb(255, 140, 0);
 }
 
 .life-bar_chunk--empty {

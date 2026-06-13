@@ -63,13 +63,16 @@ public class RoomFinderUI : MonoBehaviour
 
         var title = new Label("ROOM FINDER");
         title.AddToClassList("screen_title");
+        title.style.marginBottom = 24;
         screen.Add(title);
 
         var actions = new VisualElement();
         actions.AddToClassList("room-finder_actions");
+        actions.style.marginBottom = 24;
 
         var create = new FormButtonElement();
         create.Setup("CREATE ROOM", () => NetworkLauncher.Instance?.CreateRoom());
+        create.style.marginBottom = 12;
         actions.Add(create);
 
         var refresh = new FormButtonElement();
@@ -95,6 +98,7 @@ public class RoomFinderUI : MonoBehaviour
         list.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
         table.Add(list);
 
+        table.style.marginBottom = 24;
         screen.Add(table);
 
         status = new Label("Searching for rooms...");
@@ -122,7 +126,7 @@ public class RoomFinderUI : MonoBehaviour
             }
         }
 
-        status.text = shown == 0 ? "No open rooms. Create one!" : $"{shown} room(s) found.";
+        status.text = shown == 0 ? "" : $"{shown} room(s) found.";
     }
 
     void AddRow(SessionInfo info)

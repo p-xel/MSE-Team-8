@@ -93,4 +93,10 @@ public partial class CardElement : VisualElement
         if (selected) AddToClassList("card--selected");
         else RemoveFromClassList("card--selected");
     }
+
+    public void SetTurn(bool on)
+    {
+        if (on) AddToClassList("card--turn");
+        else RemoveFromClassList("card--turn");
+    }
 }

@@ -26,6 +26,11 @@
     border-color: rgb(35, 35, 42);
 }
 
+.card--turn {
+    background-color: rgb(255, 140, 0);
+    border-color: rgb(255, 140, 0);
+}
+
 .card_corner {
     flex-direction: column;
     align-items: flex-start;

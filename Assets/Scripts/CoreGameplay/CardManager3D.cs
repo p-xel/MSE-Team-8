@@ -23,6 +23,7 @@ public class CardManager3D : MonoBehaviour
     }
 
     private TableHand tableHand;
+    private GameManager gameManager;
     private HandVisuals tableVisuals = new HandVisuals();
     private Dictionary<NetworkBehaviourId, HandVisuals> playerVisualsMap = new Dictionary<NetworkBehaviourId, HandVisuals>();
 
@@ -82,7 +83,24 @@ public class CardManager3D : MonoBehaviour
                 playerVisualsMap.Add(hand.Id, visuals);
             }
 
+            PlayerStatus status = hand.GetComponent<PlayerStatus>();
+            bool isDead = status != null && status.lives <= 0;
+            if (isDead)
+            {
+                for (int i = 0; i < 3; i++)
+                    if (visuals.cards[i] != null && visuals.cards[i].gameObject.activeSelf)
+                        visuals.cards[i].gameObject.SetActive(false);
+                continue;
+            }
+            for (int i = 0; i < 3; i++)
+                if (visuals.cards[i] != null && !visuals.cards[i].gameObject.activeSelf && !visuals.isHiding[i])
+                    visuals.cards[i].gameObject.SetActive(true);
+
             bool isLocalPlayer = hand.Object.HasInputAuthority;
+
+            if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
+            bool isTheirTurn = !isLocalPlayer && gameManager != null && gameManager.Object != null && gameManager.Object.IsValid && gameManager.isPlayersTurn(hand.Id);
+
             CardData[] currentData = new CardData[3];
             for (int i = 0; i < 3; i++)
             {
@@ -90,6 +108,7 @@ public class CardManager3D : MonoBehaviour
                 if (visuals.cards[i] != null)
                 {
                     visuals.cards[i].SetSelected(isLocalPlayer && hand.selectedCardIndex == i);
+                    visuals.cards[i].SetTurnHighlight(isTheirTurn);
                 }
             }
 

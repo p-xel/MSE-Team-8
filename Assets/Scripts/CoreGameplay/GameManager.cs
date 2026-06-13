@@ -357,6 +357,8 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
         foreach (PlayerHand hand in allHands)
         {
             if (hand.Object == null || !hand.Object.IsValid) continue;
+            PlayerStatus status = hand.GetComponent<PlayerStatus>();
+            if (status != null && status.lives <= 0) continue;
             float v = hand.Id == _cardOverride
                 ? computeHandValue(_co0, _co1, _co2)
                 : computeHandValue(hand.myCards[0], hand.myCards[1], hand.myCards[2]);
@@ -374,6 +376,11 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
         else
         {
             Debug.Log($"[GameManager] Round Over! Winner of this round is PlayerRef {winner} (Hand ID: {winnerHand}) with best hand value of {best}");
+            if (Runner.TryFindBehaviour(winnerHand, out PlayerHand winnerHandObj))
+            {
+                PlayerStatus winnerStatus = winnerHandObj.GetComponent<PlayerStatus>();
+                if (winnerStatus != null) winnerStatus.roundsWon++;
+            }
         }
     }
 
@@ -422,8 +429,25 @@ public class GameManager : NetworkBehaviour, IPlayerLeft
             PlayerStatus targetStatus = targetHand.GetComponent<PlayerStatus>();
             if (targetStatus != null && targetStatus.lives > 0)
             {
-                targetStatus.lives--;
-                Debug.Log($"[GameManager] Winner hand {currentWinnerHandId} shot target hand {targetHandId}! Lives remaining for target: {targetStatus.lives}");
+                float targetValue = computeHandValue(targetHand.myCards[0], targetHand.myCards[1], targetHand.myCards[2]);
+                bool deflected = Mathf.Approximately(targetValue, 30.5f);
+
+                if (deflected)
+                {
+                    targetStatus.deflects++;
+                    Debug.Log($"[GameManager] Target hand {targetHandId} deflected the shot with 30.5!");
+                }
+                else
+                {
+                    targetStatus.lives--;
+                    Debug.Log($"[GameManager] Winner hand {currentWinnerHandId} shot target hand {targetHandId}! Lives remaining for target: {targetStatus.lives}");
+                    if (Runner.TryFindBehaviour(currentWinnerHandId, out PlayerHand shooterHand))
+                    {
+                        PlayerStatus shooterStatus = shooterHand.GetComponent<PlayerStatus>();
+                        if (shooterStatus != null) shooterStatus.kills++;
+                    }
+                }
+
                 shotTargetHandId = targetHandId;
                 phase = RoundPhase.Cooldown;
                 cooldownTimer = 3f;

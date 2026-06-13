@@ -1,11 +1,11 @@
 .game-button {
-    min-width: 180px;
-    height: 44px;
-    border-radius: 4px;
+    min-width: 270px;
+    height: 66px;
+    border-radius: 6px;
     border-width: 0;
     justify-content: center;
     align-items: center;
-    padding: 0 16px;
+    padding: 0 24px;
     cursor: link;
     transition-property: background-color, scale;
     transition-duration: 0.08s, 0.08s;
@@ -50,7 +50,7 @@
 
 .game-button_label {
     color: rgb(240, 240, 240);
-    font-size: 16px;
+    font-size: 24px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     letter-spacing: 1px;

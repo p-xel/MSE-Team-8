@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -24,6 +25,18 @@ public class PlayerHandUI : MonoBehaviour
     private readonly LifeBarElement[] lifeBars = new LifeBarElement[3];
     private VisualElement bottomContainer;
     private VisualElement handValueRow;
+    private Label nameLabel;
+
+    private VisualElement othersPanel;
+    private readonly Dictionary<PlayerHand, OtherEntry> others = new Dictionary<PlayerHand, OtherEntry>();
+    private readonly List<PlayerHand> othersStale = new List<PlayerHand>();
+
+    private class OtherEntry
+    {
+        public VisualElement container;
+        public Label name;
+        public LifeBarElement health;
+    }
 
     private RoundPhase lastPhase = RoundPhase.Inactive;
     private NetworkBehaviourId lastShotTargetId = default;
@@ -57,6 +70,11 @@ public class PlayerHandUI : MonoBehaviour
             foreach (var ss in styleSheets)
                 if (ss != null) root.styleSheets.Add(ss);
 
+        othersPanel = new VisualElement();
+        othersPanel.AddToClassList("others-panel");
+        othersPanel.pickingMode = PickingMode.Ignore;
+        root.Add(othersPanel);
+
         var phRoot = new VisualElement();
         phRoot.AddToClassList("ph-root");
         phRoot.pickingMode = PickingMode.Ignore;
@@ -66,7 +84,7 @@ public class PlayerHandUI : MonoBehaviour
         top.pickingMode = PickingMode.Ignore;
 
         notification = new NotificationElement();
-        top.Add(notification);
+        phRoot.Add(notification);
 
         dealRoundLabel = new Label();
         dealRoundLabel.AddToClassList("ph-deal-label");
@@ -128,6 +146,15 @@ public class PlayerHandUI : MonoBehaviour
         bottomContainer.Add(actions);
         phRoot.Add(bottomContainer);
 
+        var lifeSection = new VisualElement();
+        lifeSection.AddToClassList("ph-life-section");
+        lifeSection.pickingMode = PickingMode.Ignore;
+
+        nameLabel = new Label("");
+        nameLabel.AddToClassList("ph-life-title");
+        nameLabel.pickingMode = PickingMode.Ignore;
+        lifeSection.Add(nameLabel);
+
         var lifeBarsRow = new VisualElement();
         lifeBarsRow.AddToClassList("ph-life-bars");
         lifeBarsRow.pickingMode = PickingMode.Ignore;
@@ -137,7 +164,8 @@ public class PlayerHandUI : MonoBehaviour
             lifeBars[i].SetValue(1f);
             lifeBarsRow.Add(lifeBars[i]);
         }
-        phRoot.Add(lifeBarsRow);
+        lifeSection.Add(lifeBarsRow);
+        phRoot.Add(lifeSection);
 
 
 
@@ -152,6 +180,8 @@ public class PlayerHandUI : MonoBehaviour
 
     void Update()
     {
+        UpdateOthers();
+
         if (playerHand == null || playerHand.Object == null || !playerHand.Object.IsValid) return;
 
         if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
@@ -304,6 +334,80 @@ public class PlayerHandUI : MonoBehaviour
         }
     }
 
+    void UpdateOthers()
+    {
+        if (othersPanel == null) return;
+        if (gameManager == null) gameManager = FindAnyObjectByType<GameManager>();
+
+        foreach (var hand in PlayerHand.ActiveHands)
+        {
+            if (hand == null || hand.Object == null || !hand.Object.IsValid) continue;
+            if (hand.Object.HasInputAuthority) continue;
+
+            OtherEntry entry = GetOrCreateOther(hand);
+
+            entry.name.text = ResolveOtherName(hand);
+
+            PlayerStatus status = hand.GetComponent<PlayerStatus>();
+            if (status != null)
+                entry.health.SetValue((float)status.lives / PlayerStatus.MaxLives);
+
+            bool gmValid = gameManager != null && gameManager.Object != null && gameManager.Object.IsValid;
+            bool isTurn = gmValid && gameManager.isPlayersTurn(hand.Id);
+            bool isWinner = gmValid && gameManager.phase == RoundPhase.Shooting && gameManager.currentWinnerHandId == hand.Id;
+            entry.container.EnableInClassList("other-tag--turn", isTurn);
+            entry.container.EnableInClassList("other-tag--winner", isWinner);
+        }
+
+        othersStale.Clear();
+        foreach (var kv in others)
+        {
+            var hand = kv.Key;
+            if (hand == null || hand.Object == null || !hand.Object.IsValid || hand.Object.HasInputAuthority)
+            {
+                kv.Value.container.RemoveFromHierarchy();
+                othersStale.Add(hand);
+            }
+        }
+        foreach (var h in othersStale) others.Remove(h);
+    }
+
+    OtherEntry GetOrCreateOther(PlayerHand hand)
+    {
+        if (others.TryGetValue(hand, out var e)) return e;
+
+        var container = new VisualElement();
+        container.AddToClassList("other-tag");
+        container.pickingMode = PickingMode.Ignore;
+
+        var name = new Label();
+        name.AddToClassList("other_name");
+        name.pickingMode = PickingMode.Ignore;
+        container.Add(name);
+
+        var health = new LifeBarElement();
+        health.AddToClassList("other_health");
+        health.SetValue(1f);
+        container.Add(health);
+
+        othersPanel.Add(container);
+        e = new OtherEntry { container = container, name = name, health = health };
+        others[hand] = e;
+        return e;
+    }
+
+    string ResolveOtherName(PlayerHand hand)
+    {
+        PlayerStatus status = hand.GetComponent<PlayerStatus>();
+        string n = status != null ? status.playerName.Value : null;
+        if (!string.IsNullOrEmpty(n)) return n.ToUpper();
+
+        if (hand.Object != null && hand.Object.IsValid)
+            return hand.Object.InputAuthority == PlayerRef.None ? "BOT" : $"PLAYER {hand.Object.InputAuthority.PlayerId}";
+
+        return "";
+    }
+
     void RefreshButtons()
     {
         if (roundManager == null) return;
@@ -322,6 +426,12 @@ public class PlayerHandUI : MonoBehaviour
         lifeBars[1].style.display = DisplayStyle.None;
         lifeBars[2].style.display = DisplayStyle.None;
         if (playerStatus == null) return;
+
+        if (nameLabel != null)
+        {
+            string n = playerStatus.playerName.Value;
+            nameLabel.text = string.IsNullOrEmpty(n) ? "" : n.ToUpper();
+        }
 
         lifeBars[0].SetValue((float)playerStatus.lives / PlayerStatus.MaxLives);
         bool isMyTurn = roundManager != null && roundManager.isPlayersTurn(playerHand.Id);

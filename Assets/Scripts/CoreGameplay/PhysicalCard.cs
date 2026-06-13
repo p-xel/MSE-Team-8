@@ -95,6 +95,11 @@ public class PhysicalCard : MonoBehaviour
         UpdateVisualHeight();
     }
 
+    public void SetTurnHighlight(bool on)
+    {
+        cardElement?.SetTurn(on);
+    }
+
     private void UpdateVisualHeight()
     {
         float targetY = baseLocalPos.y;

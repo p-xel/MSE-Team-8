@@ -10,6 +10,7 @@ public class PlayerHand : NetworkBehaviour
 
     private GameManager roundManager;
     private GameDeck gameDeck;
+    private PlayerStatus playerStatus;
 
     public static PlayerHand localHand { get; private set; }
     public static readonly System.Collections.Generic.List<PlayerHand> ActiveHands = new System.Collections.Generic.List<PlayerHand>();
@@ -43,6 +44,19 @@ public class PlayerHand : NetworkBehaviour
     {
         if (Object == null || !Object.IsValid) return;
         if (!Object.HasStateAuthority) return;
+
+        if (playerStatus == null) playerStatus = GetComponent<PlayerStatus>();
+        if (playerStatus != null && playerStatus.lives <= 0)
+        {
+            if (!isHandEmpty())
+            {
+                myCards.Set(0, default);
+                myCards.Set(1, default);
+                myCards.Set(2, default);
+            }
+            return;
+        }
+
         if (Object.InputAuthority != PlayerRef.None) return;
 
         if (roundManager == null) roundManager = FindAnyObjectByType<GameManager>();

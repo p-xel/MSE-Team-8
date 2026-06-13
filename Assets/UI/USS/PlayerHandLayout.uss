@@ -32,14 +32,18 @@
 }
 
 .ph-hand-value-icon {
-    font-size: 42px;
+    font-size: 63px;
     -unity-font-style: bold;
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
 }
 
 .ph-hand-value-label {
-    font-size: 42px;
+    font-size: 63px;
     -unity-font-style: bold;
     margin-left: 6px;
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
 }
 
 .ph-bottom {
@@ -62,8 +66,8 @@
 
 .ph-actions {
     position: absolute;
-    left: calc(50% + 220px);
-    bottom: 68px;
+    left: 22px;
+    bottom: 200px;
     flex-direction: column;
     justify-content: flex-end;
 }
@@ -72,14 +76,31 @@
     margin-bottom: 10px;
 }
 
-.ph-life-bars {
+.ph-life-section {
     position: absolute;
     bottom: 0;
-    left: 0;
     right: 0;
-    flex-direction: row;
+    flex-direction: column;
+    align-items: flex-end;
     padding: 12px 22px;
-    height: 46px;
+    width: 640px;
+}
+
+.ph-life-title {
+    color: rgb(255, 140, 0);
+    font-size: 28px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.ph-life-bars {
+    flex-direction: row;
+    height: 92px;
+    width: 100%;
 }
 
 .ph-life-bars > .life-bar {
@@ -119,4 +140,54 @@
 
 .ph-shooting-buttons > .game-button {
     margin-bottom: 12px;
+}
+
+.others-panel {
+    position: absolute;
+    right: 22px;
+    bottom: 200px;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.other-tag {
+    align-items: flex-end;
+    width: 300px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.45);
+    border-radius: 8px;
+}
+
+.other_name {
+    color: rgb(235, 235, 240);
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    -unity-text-align: middle-right;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.other_health {
+    height: 20px;
+    width: 100%;
+}
+
+.other-tag--turn .other_name {
+    color: rgb(255, 140, 0);
+}
+
+.other-tag--turn .life-bar_chunk--filled {
+    background-color: rgb(255, 140, 0);
+}
+
+.other-tag--winner .other_name {
+    color: rgb(255, 225, 50);
+}
+
+.other-tag--winner .life-bar_chunk--filled {
+    background-color: rgb(255, 225, 50);
 }

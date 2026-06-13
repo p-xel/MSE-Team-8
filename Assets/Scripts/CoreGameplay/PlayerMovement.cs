@@ -42,6 +42,12 @@ public class PlayerMovement : NetworkBehaviour
     public Transform cameraPivot;
     public Transform cameraHandle;
 
+    [Header("Camera Shake")]
+    public float shakeDuration = 0.35f;
+    public float shakeMagnitude = 0.12f;
+    private float _shakeTimer;
+    private int _lastLives = -1;
+
     [Header("Death Setup")]
     public Transform deadTransformOverride;
     public Transform playerVisualRoot;
@@ -131,14 +137,29 @@ public class PlayerMovement : NetworkBehaviour
         if (Object == null || !Object.HasInputAuthority || !Runner.GetVisible())
             return;
 
+        if (_playerStatus == null) _playerStatus = GetComponent<PlayerStatus>();
+        if (_playerStatus != null)
+        {
+            int lives = _playerStatus.lives;
+            if (_lastLives >= 0 && lives < _lastLives) _shakeTimer = shakeDuration;
+            _lastLives = lives;
+        }
+
         if (cameraPivot != null)
         {
             cameraPivot.localRotation = Quaternion.Euler(_pitch, _yaw - _baseYaw, 0f);
         }
-        
+
         if (Camera != null && cameraHandle != null)
         {
             Camera.transform.SetPositionAndRotation(cameraHandle.position, cameraHandle.rotation);
+
+            if (_shakeTimer > 0f)
+            {
+                _shakeTimer -= Time.deltaTime;
+                float amt = shakeMagnitude * Mathf.Clamp01(_shakeTimer / shakeDuration);
+                Camera.transform.position += Random.insideUnitSphere * amt;
+            }
         }
     }
 
@@ -227,7 +248,10 @@ public class PlayerMovement : NetworkBehaviour
 
         if (prefabToSpawn != null)
         {
-            Instantiate(prefabToSpawn, playerBody);
+            GameObject model = Instantiate(prefabToSpawn, playerBody);
+            if (Object.HasInputAuthority)
+                foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
+                    r.enabled = false;
         }
 
         SeatedLookAtIK ik = GetComponent<SeatedLookAtIK>();

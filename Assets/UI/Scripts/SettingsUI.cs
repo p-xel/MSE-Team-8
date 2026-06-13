@@ -10,7 +10,7 @@ public class SettingsUI : MonoBehaviour
     public event Action BackClicked;
 
     private UIDocument doc;
-    private Label skinName;
+    // private Label skinName;
 
     void OnEnable()
     {
@@ -56,6 +56,7 @@ public class SettingsUI : MonoBehaviour
         soundGroup.Add(slider);
         card.Add(soundGroup);
 
+        /*
         var skinGroup = new VisualElement();
         skinGroup.AddToClassList("screen_field-group");
         var skinLabel = new Label("SKIN");
@@ -75,14 +76,18 @@ public class SettingsUI : MonoBehaviour
         selector.Add(next);
         skinGroup.Add(selector);
         card.Add(skinGroup);
+        */
 
         screen.Add(card);
         root.Add(screen);
 
+        /*
         if (!string.IsNullOrEmpty(Session.Token) && ApiClient.Instance != null)
             ApiClient.Instance.GetMe(LoadSkin, _ => { });
+        */
     }
 
+    /*
     void LoadSkin(AccountResponse account)
     {
         if (account == null) return;
@@ -104,4 +109,5 @@ public class SettingsUI : MonoBehaviour
         if (!string.IsNullOrEmpty(Session.Token) && ApiClient.Instance != null)
             ApiClient.Instance.UpdateSelectedCharacter(Session.Skin.ToString(), _ => { }, _ => { });
     }
+    */
 }

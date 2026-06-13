@@ -48,4 +48,7 @@
     color: rgb(225, 225, 230);
     font-size: 20px;
     -unity-text-align: middle-left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

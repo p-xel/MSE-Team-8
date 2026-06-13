@@ -90,7 +90,7 @@ public class MainMenuController : MonoBehaviour
         Session.Username = username;
         Session.Token = token;
         Session.AccountId = accountId;
-        Show(account);
+        Show(menu);
     }
 
     void OnLogout()

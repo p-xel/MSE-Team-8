@@ -1,0 +1,115 @@
+.go-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.go-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.72);
+    align-items: center;
+    justify-content: center;
+}
+
+.go-modal_title {
+    color: rgb(245, 245, 245);
+    font-size: 72px;
+    -unity-font-style: bold;
+    letter-spacing: 8px;
+    margin-bottom: 32px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.go-modal_subtitle {
+    color: rgb(150, 170, 220);
+    font-size: 24px;
+    letter-spacing: 3px;
+    margin-bottom: 32px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.go-stats {
+    width: 900px;
+    max-width: 90%;
+    margin-bottom: 32px;
+}
+
+.go-stats_row {
+    flex-direction: row;
+    padding: 8px 24px;
+}
+
+.go-stats_row--header {
+    margin-bottom: 8px;
+}
+
+.go-stats_row--winner {
+    background-color: rgba(255, 200, 40, 0.12);
+}
+
+.go-stats_cell--header {
+    flex-grow: 1;
+    color: rgb(150, 170, 220);
+    font-size: 18px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-left;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
+
+.go-stats_cell {
+    flex-grow: 1;
+    color: rgb(225, 225, 230);
+    font-size: 20px;
+    -unity-text-align: middle-left;
+}
+
+.go-modal .form-button {
+    height: 56px;
+    min-width: 220px;
+    padding: 0 32px;
+    border-radius: 6px;
+    border-width: 0;
+    justify-content: center;
+    align-items: center;
+    margin-top: 8px;
+    cursor: link;
+}
+
+.go-modal .form-button--primary {
+    background-color: rgb(58, 170, 75);
+}
+
+.go-modal .form-button--primary:hover {
+    background-color: rgb(72, 190, 90);
+}
+
+.go-modal .form-button--danger {
+    background-color: rgb(195, 55, 55);
+}
+
+.go-modal .form-button--danger:hover {
+    background-color: rgb(215, 70, 70);
+}
+
+.go-modal .form-button--disabled {
+    opacity: 0.4;
+    cursor: arrow;
+}
+
+.go-modal .form-button_label {
+    color: rgb(245, 245, 245);
+    font-size: 24px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url('../Fonts/XBAND_Rough SDF.asset');
+}
