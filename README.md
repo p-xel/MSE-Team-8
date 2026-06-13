@@ -22,7 +22,11 @@ A 3D multiplayer card game based on the classic card game **Thirty-One**, built 
 3. Click **Add** -> **Add project from disk** and select the cloned repository folder.
 4. Ensure the Editor Version is set to **6000.4.0f1**. Open the project.
 
-### 2. Scene Setup & Build Settings
+### 2. Import Assets
+1. Download the assets from [this Google Drive folder](https://drive.google.com/drive/folders/1yITSRtwZjU3ma8PNk1ZMFHRVASxV4jIO?usp=sharing)
+2. Extract the downloaded zip file and place the contents in `Assets/ExternalAssets`.
+
+### 3. Scene Setup & Build Settings
 Make sure the key scenes are added to your build settings so that the network launcher can load them correctly:
 1. Open **File > Build Settings...**
 2. Add the following scenes to the **Scenes In Build** list (ensure the path is correct):
@@ -30,7 +34,7 @@ Make sure the key scenes are added to your build settings so that the network la
    - `Assets/Scenes/MultiplayerScene.unity`
 3. Make sure `MainMenu.unity` is at index `0`.
 
-### 3. Running & Testing Locally
+### 4. Running & Testing Locally
 
 #### Solo vs. Bots (Offline Mode)
 - Open `Assets/Scenes/MainMenu.unity` and press **Play** in the Unity Editor.
