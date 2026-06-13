@@ -73,15 +73,19 @@ public class PlayerHand : NetworkBehaviour
         }
 
         float roll = Random.value;
-        if (roll < 0.70f)
+        if (roll < 0.55f)
         {
             int myIndex = Random.Range(0, 3);
             int tableIndex = Random.Range(0, 3);
             swapCard(table, myIndex, tableIndex, roundManager);
         }
-        else if (roll < 0.85f)
+        else if (roll < 0.70f)
         {
             stealTable();
+        }
+        else if (roll < 0.85f)
+        {
+            knockTurn();
         }
         else
         {
