@@ -65,6 +65,12 @@ public class PlayerMovement : NetworkBehaviour
     [Networked, OnChangedRender(nameof(OnCharacterIndexChanged))]
     private int characterIndex { get; set; }
 
+    [Networked]
+    private Vector3 networkedPosition { get; set; }
+
+    [Networked]
+    private Quaternion networkedRotation { get; set; }
+
     private void Awake()
     {
         if (Camera == null) Camera = Camera.main;
@@ -94,6 +100,8 @@ public class PlayerMovement : NetworkBehaviour
         if (Object.HasStateAuthority)
         {
             characterIndex = Random.Range(0, 4);
+            networkedPosition = transform.position;
+            networkedRotation = transform.rotation;
         }
         UpdateCharacterModel();
     }
@@ -101,6 +109,13 @@ public class PlayerMovement : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!Runner.GetVisible()) return;
+
+        if (Object.HasStateAuthority)
+        {
+            networkedPosition = transform.position;
+            networkedRotation = transform.rotation;
+        }
+
         if (!HasInputAuthority) return;
 
         float screenX = Input.mousePosition.x / Screen.width;
@@ -166,6 +181,12 @@ public class PlayerMovement : NetworkBehaviour
     public override void Render()
     {
         if (Object == null || !Object.IsValid) return;
+
+        if (!Object.HasStateAuthority && networkedPosition != Vector3.zero)
+        {
+            transform.position = networkedPosition;
+            transform.rotation = networkedRotation;
+        }
 
         if (_playerStatus == null)
         {
@@ -248,10 +269,15 @@ public class PlayerMovement : NetworkBehaviour
 
         if (prefabToSpawn != null)
         {
-            GameObject model = Instantiate(prefabToSpawn, playerBody);
-            if (Object.HasInputAuthority)
-                foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
-                    r.enabled = false;
+            Instantiate(prefabToSpawn, playerBody);
+        }
+
+        if (Object.HasInputAuthority)
+        {
+            foreach (Renderer r in GetComponentsInChildren<Renderer>())
+            {
+                r.enabled = false;
+            }
         }
 
         SeatedLookAtIK ik = GetComponent<SeatedLookAtIK>();

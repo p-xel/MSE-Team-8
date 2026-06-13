@@ -183,8 +183,16 @@ public class PlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
                 if (playerIndex >= 0)
                 {
                     Vector3 spawnPos = GetSpawnPosition(playerIndex, out Quaternion spawnRot);
-                    playerMovement.transform.position = spawnPos;
-                    playerMovement.transform.rotation = spawnRot;
+                    NetworkTransform nt = playerMovement.GetComponent<NetworkTransform>();
+                    if (nt != null)
+                    {
+                        nt.Teleport(spawnPos, spawnRot);
+                    }
+                    else
+                    {
+                        playerMovement.transform.position = spawnPos;
+                        playerMovement.transform.rotation = spawnRot;
+                    }
                 }
                 break;
             }
